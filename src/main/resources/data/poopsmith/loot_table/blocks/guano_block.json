@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "poopsmith:guano_block"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "poopsmith:blocks/guano_block"
+}

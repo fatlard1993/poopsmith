@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "poopsmith:block/bat_box"
+    },
+    "facing=east": {
+      "model": "poopsmith:block/bat_box",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "poopsmith:block/bat_box",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "poopsmith:block/bat_box",
+      "y": 270
+    }
+  }
+}

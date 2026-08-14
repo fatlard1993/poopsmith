@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "poopsmith:poop_layer",
+    "poopsmith:poop_block",
+    "poopsmith:guano_layer",
+    "poopsmith:guano_block"
+  ]
+}

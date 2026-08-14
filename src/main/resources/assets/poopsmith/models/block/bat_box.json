@@ -1,0 +1,44 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "poopsmith:block/bat_box_side",
+    "front": "poopsmith:block/bat_box_front",
+    "side": "poopsmith:block/bat_box_side"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 13],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#front"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#side", "cullface": "south"},
+        "east": {"uv": [13, 0, 16, 16], "texture": "#side", "cullface": "east"},
+        "west": {"uv": [0, 0, 3, 16], "texture": "#side", "cullface": "west"},
+        "up": {"uv": [0, 13, 16, 16], "texture": "#side", "cullface": "up"},
+        "down": {"uv": [0, 13, 16, 16], "texture": "#side", "cullface": "down"}
+      }
+    },
+    {
+      "from": [0, 0, 11],
+      "to": [16, 4, 13],
+      "faces": {
+        "north": {"uv": [0, 12, 16, 16], "texture": "#side"},
+        "east": {"uv": [11, 12, 13, 16], "texture": "#side"},
+        "west": {"uv": [3, 12, 5, 16], "texture": "#side"},
+        "up": {"uv": [0, 11, 16, 13], "texture": "#side"},
+        "down": {"uv": [0, 11, 16, 13], "texture": "#side", "cullface": "down"}
+      }
+    },
+    {
+      "from": [0, 12, 11],
+      "to": [16, 16, 13],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 4], "texture": "#side"},
+        "east": {"uv": [11, 0, 13, 4], "texture": "#side"},
+        "west": {"uv": [3, 0, 5, 4], "texture": "#side"},
+        "up": {"uv": [0, 11, 16, 13], "texture": "#side", "cullface": "up"},
+        "down": {"uv": [0, 11, 16, 13], "texture": "#side"}
+      }
+    }
+  ]
+}

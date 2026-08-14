@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#minecraft:planks",
+    "G": "poopsmith:guano"
+  },
+  "pattern": [
+    "PPP",
+    "PGP",
+    "P P"
+  ],
+  "result": {
+    "id": "poopsmith:bat_box"
+  }
+}

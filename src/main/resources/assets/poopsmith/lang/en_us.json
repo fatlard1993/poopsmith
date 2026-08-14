@@ -1,0 +1,16 @@
+{
+  "block.poopsmith.poop_layer": "Poop Layer",
+  "block.poopsmith.poop_block": "Poop Block",
+  "block.poopsmith.guano_block": "Guano Block",
+  "block.poopsmith.guano_layer": "Guano Layer",
+  "block.poopsmith.bat_box": "Bat Box",
+  "item.poopsmith.poop": "Poop",
+  "item.poopsmith.guano": "Guano",
+  "itemGroup.poopsmith.poopsmith": "Poopsmith",
+  "key.poopsmith.poop": "Poop",
+  "key.category.poopsmith.main": "Poopsmith",
+  "message.poopsmith.accident": "You had an accident!",
+  "message.poopsmith.diarrhea": "Your stomach gurgles ominously...",
+  "message.poopsmith.guano_cure": "Chalky, vile, and effective. Your gut settles at once.",
+  "message.poopsmith.not_ready": "You don't need to go yet"
+}
