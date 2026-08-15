@@ -37,18 +37,19 @@ public final class PoopHud {
 	private static final String FILL_ID = "fill";
 	private static final String EXIT_ICON_ID = "exit_icon";
 
-	// Vanilla frame: hunger row spans center+10 to center+91, its icons end
-	// at height-30; the tube top overlaps the drumsticks' bottom 4px and the
-	// tube bottom meets the hotbar's top edge (height-22). The XP bar lives
-	// in the overlapped band; that is part of the look for the user to judge.
+	// Vanilla frame: hunger row spans center+10 to center+91, its icons at
+	// height-39..height-30, and the XP bar band at height-29..height-24. The
+	// tube bottom sits exactly on the XP bar's top edge (margin 29) so it
+	// never touches it; the slim tube weaves through the drumsticks' lower
+	// half instead of hanging below the row.
 	private static final int TUBE_WIDTH = 81;
-	private static final int TUBE_HEIGHT = 12;
+	private static final int TUBE_HEIGHT = 8;
 	private static final int LEFT_EDGE_FROM_CENTER = 10;
-	private static final int BOTTOM_MARGIN = 22;
+	private static final int BOTTOM_MARGIN = 29;
 
 	private static final int ICON_SIZE = 9;
 	private static final int ICON_X = TUBE_WIDTH - 8; // pokes past the exit end
-	private static final int ICON_Y = 1;
+	private static final int ICON_Y = 0;
 
 	// Flush pacing: fill rushes over the ~3-tick geometry interpolation, the
 	// icon pops shortly after the rush lands and lingers most of a second
