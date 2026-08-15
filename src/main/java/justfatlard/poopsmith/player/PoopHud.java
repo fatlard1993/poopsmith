@@ -39,13 +39,12 @@ public final class PoopHud {
 
 	// Vanilla frame: hunger row spans center+10 to center+91, its icons at
 	// height-39..height-30, and the XP bar band at height-29..height-24. The
-	// tube bottom sits exactly on the XP bar's top edge (margin 29) so it
-	// never touches it; the slim tube weaves through the drumsticks' lower
-	// half instead of hanging below the row.
+	// 3px ribbon rides the seam: one row overlapping the drumstick bottoms,
+	// one in the gap, one on the XP bar's top edge.
 	private static final int TUBE_WIDTH = 81;
-	private static final int TUBE_HEIGHT = 8;
+	private static final int TUBE_HEIGHT = 3;
 	private static final int LEFT_EDGE_FROM_CENTER = 10;
-	private static final int BOTTOM_MARGIN = 29;
+	private static final int BOTTOM_MARGIN = 28;
 
 	private static final int ICON_SIZE = 9;
 	private static final int ICON_X = TUBE_WIDTH - 8; // pokes past the exit end

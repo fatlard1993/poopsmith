@@ -113,11 +113,11 @@ def planks(size, seed):
 # Intestine HUD tube: hunger-bar width, gentle S-curves at the vanilla pip
 # pitch so the curves read as weaving between the drumsticks above. All the
 # visual judgment calls live in these constants for easy tuning.
-INTESTINE_W, INTESTINE_H = 81, 8
+INTESTINE_W, INTESTINE_H = 81, 3
 INTESTINE_PITCH = 8       # curve period; matches vanilla pip spacing
-INTESTINE_AMPLITUDE = 1.3 # curve depth in px
+INTESTINE_AMPLITUDE = 0.4 # curve depth in px; at ribbon size, a subtle wiggle
 INTESTINE_PHASE = 2.0     # slides dips relative to drumstick columns
-TUBE_RADIUS = 1.6         # pink flesh half-thickness
+TUBE_RADIUS = 1.1         # pink flesh half-thickness
 BORE_RADIUS = 1.2         # brown fill half-thickness
 OUTLINE_RADIUS = 3.2
 
@@ -128,7 +128,7 @@ PINK_OUTLINE = (0x7A, 0x4C, 0x52, 0xFF)
 
 
 def intestine_center(x):
-    return 3.5 + INTESTINE_AMPLITUDE * math.sin(2 * math.pi * (x + INTESTINE_PHASE) / INTESTINE_PITCH)
+    return 1.5 + INTESTINE_AMPLITUDE * math.sin(2 * math.pi * (x + INTESTINE_PHASE) / INTESTINE_PITCH)
 
 
 def intestine_tube(seed):
