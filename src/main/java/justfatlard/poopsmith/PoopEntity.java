@@ -22,7 +22,11 @@ import net.minecraft.world.phys.HitResult;
  * sick/dizzy combo (nausea + slowness); hitting anything else just splats.
  */
 public class PoopEntity extends ThrowableItemProjectile {
-	private static final int NAUSEA_TICKS = 160;
+	// Nausea's warp ramps in over 150 ticks and fades from 60 ticks before
+	// expiry (verified blend registration, see PlayerPoopManager's nausea
+	// constants): 120 ticks peaks around 40% warp, a solid dizzy insult that
+	// never reaches the full-screen smear
+	private static final int NAUSEA_TICKS = 120;
 	private static final int SLOWNESS_TICKS = 100;
 
 	public PoopEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level world) {

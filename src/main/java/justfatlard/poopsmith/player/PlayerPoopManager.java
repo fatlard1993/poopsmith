@@ -37,7 +37,18 @@ public final class PlayerPoopManager {
 	private static final float DIARRHEA_CHANCE = 0.30F;
 	private static final int DIARRHEA_DURATION_TICKS = 1800; // 90 seconds
 	private static final int DIARRHEA_FILL_INTERVAL_TICKS = 20;
-	private static final int ACCIDENT_NAUSEA_TICKS = 200;
+
+	// Nausea tuning, against this snapshot's verified warp behavior: the
+	// screen spin intensity is the effect's blend factor, and nausea
+	// registers setBlendDuration(blendIn=150, blendOut=20, blendOutAdvance=60)
+	// (MobEffects bytecode). A pulse of D ticks therefore peaks at roughly
+	// (D - 60) / 150 of full warp: 110 ticks peaks near a third, a queasy
+	// wobble that never approaches the full-screen warp a long application
+	// reaches. Diarrhea keeps full-duration Hunger (the mechanical driver)
+	// but swaps constant nausea for these pulses on an interval.
+	private static final int NAUSEA_PULSE_TICKS = 110;
+	private static final int NAUSEA_PULSE_INTERVAL_TICKS = 300; // every 15s of diarrhea
+	private static final int ACCIDENT_NAUSEA_TICKS = 110;
 
 	/** Foods that upset the gut: raw meat, rot, and suspicious edibles. */
 	private static final Set<Item> RISKY_FOODS = Set.of(
@@ -68,6 +79,11 @@ public final class PlayerPoopManager {
 			data.setDiarrheaTicks(player.getUUID(), remaining - 1);
 			if (remaining % DIARRHEA_FILL_INTERVAL_TICKS == 0) {
 				addLevel(player, 1);
+			}
+			// Queasy reminder pulses; the onset pulse comes from startDiarrhea,
+			// so skip the interval boundary at the full duration
+			if (remaining % NAUSEA_PULSE_INTERVAL_TICKS == 0 && remaining < DIARRHEA_DURATION_TICKS) {
+				player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, NAUSEA_PULSE_TICKS, 0));
 			}
 		}
 	}
@@ -119,7 +135,7 @@ public final class PlayerPoopManager {
 		if (server == null) return;
 		PoopLevelData.get(server).setDiarrheaTicks(player.getUUID(), DIARRHEA_DURATION_TICKS);
 		player.addEffect(new MobEffectInstance(MobEffects.HUNGER, DIARRHEA_DURATION_TICKS, 0));
-		player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, DIARRHEA_DURATION_TICKS, 0));
+		player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, NAUSEA_PULSE_TICKS, 0));
 		player.sendSystemMessage(
 			Component.translatable("message.poopsmith.diarrhea").withStyle(ChatFormatting.DARK_GREEN), false);
 	}
@@ -158,7 +174,7 @@ public final class PlayerPoopManager {
 		PoopPlacement.deposit(world, player.blockPosition());
 		PoopPlacement.playFart(world, player);
 
-		int level = data.setLevel(player.getUUID(), 0);
+		data.setLevel(player.getUUID(), 0);
 		FoodData foodData = player.getFoodData();
 		foodData.setFoodLevel(Math.max(0, foodData.getFoodLevel() - 1));
 
@@ -167,7 +183,7 @@ public final class PlayerPoopManager {
 			player.sendSystemMessage(
 				Component.translatable("message.poopsmith.accident").withStyle(ChatFormatting.GOLD), false);
 		}
-		PoopHud.showOrUpdate(player, level);
+		PoopHud.flush(player);
 	}
 
 	/** Deferred-push join hook (Pandorical handshake lands after JOIN). */

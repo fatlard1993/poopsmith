@@ -7,6 +7,7 @@ script-generated-texture approach as village-builder's create_textures.py.
 Deterministic (seeded) so re-running produces identical bytes.
 """
 
+import math
 import os
 import random
 import struct
@@ -109,39 +110,53 @@ def planks(size, seed):
     return rows
 
 
-# 9x9 pip mask matching vanilla HUD icon size: a small rounded mound.
-# X = fill, O = outline only, . = transparent
-PIP_MASK = [
-    ".........",
-    "...OO....",
-    "..OXXO...",
-    ".OXXXXO..",
-    ".OXXXXO..",
-    "OXXXXXXO.",
-    "OXXXXXXO.",
-    ".OOOOOO..",
-    ".........",
-]
+# Intestine HUD tube: hunger-bar width, gentle S-curves at the vanilla pip
+# pitch so the curves read as weaving between the drumsticks above. All the
+# visual judgment calls live in these constants for easy tuning.
+INTESTINE_W, INTESTINE_H = 81, 12
+INTESTINE_PITCH = 8       # curve period; matches vanilla pip spacing
+INTESTINE_AMPLITUDE = 1.8 # curve depth in px
+INTESTINE_PHASE = 2.0     # slides dips relative to drumstick columns
+TUBE_RADIUS = 2.2         # pink flesh half-thickness
+BORE_RADIUS = 1.2         # brown fill half-thickness
+OUTLINE_RADIUS = 3.2
+
+# Muted, low-contrast pinks: the tube should read as background plumbing
+PINK = (0xC9, 0x8F, 0x96, 0xFF)
+PINK_DARK = (0xAD, 0x72, 0x79, 0xFF)
+PINK_OUTLINE = (0x7A, 0x4C, 0x52, 0xFF)
 
 
-def poop_pip(variant, seed):
-    """9x9 HUD pip in vanilla status-bar style: 'full' is a speckled brown
-    mound with a dark outline, 'empty' is the dark silhouette only (vanilla
-    empty-heart convention), 'half' fills only the left half over the
-    silhouette."""
+def intestine_center(x):
+    return 5.5 + INTESTINE_AMPLITUDE * math.sin(2 * math.pi * (x + INTESTINE_PHASE) / INTESTINE_PITCH)
+
+
+def intestine_tube(seed):
+    """The empty tube: pink flesh with a darker outline along a sine path."""
     rng = random.Random(seed)
-    rows = [[CLEAR] * 9 for _ in range(9)]
-    for y in range(9):
-        for x in range(9):
-            cell = PIP_MASK[y][x]
-            if cell == '.':
-                continue
-            filled = cell == 'X' and (variant == 'full' or (variant == 'half' and x <= 3))
-            if filled:
+    rows = [[CLEAR] * INTESTINE_W for _ in range(INTESTINE_H)]
+    for x in range(INTESTINE_W):
+        c = intestine_center(x)
+        for y in range(INTESTINE_H):
+            d = abs(y + 0.5 - c)
+            if d <= TUBE_RADIUS:
+                rows[y][x] = PINK_DARK if rng.random() < 0.18 else PINK
+            elif d <= OUTLINE_RADIUS:
+                rows[y][x] = PINK_OUTLINE
+    return rows
+
+
+def intestine_fill(seed):
+    """The bore contents: speckled brown along the same path, drawn by the
+    client clipped to a width proportional to the poop bar."""
+    rng = random.Random(seed)
+    rows = [[CLEAR] * INTESTINE_W for _ in range(INTESTINE_H)]
+    for x in range(INTESTINE_W):
+        c = intestine_center(x)
+        for y in range(INTESTINE_H):
+            if abs(y + 0.5 - c) <= BORE_RADIUS:
                 r = rng.random()
-                rows[y][x] = DARK if r < 0.22 else (LIGHT if r < 0.36 else BROWN)
-            else:
-                rows[y][x] = DARKER if cell == 'O' else (0x2B, 0x1A, 0x0C, 0xFF)
+                rows[y][x] = DARK if r < 0.20 else (LIGHT if r < 0.32 else BROWN)
     return rows
 
 
@@ -207,6 +222,5 @@ write_png(os.path.join(OUT, "textures/block/bat_box_front.png"), bat_box_front(1
 
 write_png(os.path.join(OUT, "textures/entity/poopsmith_gloves.png"), poopsmith_gloves(seed=8117))
 
-write_png(os.path.join(OUT, "textures/gui/poop_pip_full.png"), poop_pip('full', seed=4271))
-write_png(os.path.join(OUT, "textures/gui/poop_pip_half.png"), poop_pip('half', seed=4271))
-write_png(os.path.join(OUT, "textures/gui/poop_pip_empty.png"), poop_pip('empty', seed=4271))
+write_png(os.path.join(OUT, "textures/gui/poop_intestine.png"), intestine_tube(seed=5233))
+write_png(os.path.join(OUT, "textures/gui/poop_intestine_fill.png"), intestine_fill(seed=5233))
