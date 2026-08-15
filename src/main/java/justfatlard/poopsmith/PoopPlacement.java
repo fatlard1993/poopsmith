@@ -207,20 +207,28 @@ public final class PoopPlacement {
 	 * (the break handler in Main).
 	 */
 	public static void fertilizeAround(ServerLevel world, BlockPos pos) {
+		if (tryGrow(world, pos.below())) return;
+		for (Direction direction : Direction.Plane.HORIZONTAL) {
+			if (tryGrow(world, pos.relative(direction))) return;
+		}
+		// Diagonal-below ring: catches the grass beside a pile that sits on
+		// path, poop block, or other unbonemealable ground
+		for (Direction direction : Direction.Plane.HORIZONTAL) {
+			if (tryGrow(world, pos.relative(direction).below())) return;
+		}
+		// Nothing bonemealable in range (streets, latrine pits, bare dirt):
+		// the charge escapes as a visible puff so the action never reads dead
+		world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 5);
+	}
+
+	private static boolean tryGrow(ServerLevel world, BlockPos pos) {
 		net.minecraft.world.item.ItemStack boneMeal =
 			new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BONE_MEAL);
-		BlockPos below = pos.below();
-		if (net.minecraft.world.item.BoneMealItem.growCrop(boneMeal, world, below)) {
-			world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, below, 15);
-			return;
+		if (net.minecraft.world.item.BoneMealItem.growCrop(boneMeal, world, pos)) {
+			world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 15);
+			return true;
 		}
-		for (Direction direction : Direction.Plane.HORIZONTAL) {
-			BlockPos side = pos.relative(direction);
-			if (net.minecraft.world.item.BoneMealItem.growCrop(boneMeal, world, side)) {
-				world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, side, 15);
-				return;
-			}
-		}
+		return false;
 	}
 
 	/**
