@@ -35,9 +35,11 @@ public final class LatrineStructureInjector {
 	};
 
 	private static final Identifier LATRINE_STRUCTURE = Identifier.fromNamespaceAndPath(Main.MOD_ID, "latrine");
-	// Weight 1: jigsaw pools have no uniqueness, so weight multiplies the odds
-	// of duplicate latrines in one village; one privy per village is the feel
-	private static final int LATRINE_WEIGHT = 1;
+	// Vanilla's plains houses pool totals 87 weight across 37 entries, so a
+	// weight of 5 is ~5% per house slot: roughly half of small villages and
+	// two thirds of large ones get a privy, and the rest are what the
+	// dig-a-latrine quest is for. Weight 1 put it at 11% and nobody found one.
+	private static final int LATRINE_WEIGHT = 5;
 
 	private LatrineStructureInjector() {}
 
