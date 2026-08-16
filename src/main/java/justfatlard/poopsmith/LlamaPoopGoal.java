@@ -45,6 +45,7 @@ public class LlamaPoopGoal extends Goal {
 	@Override
 	public void start() {
 		ticksWalking = 0;
+		if (target == null) return;
 		llama.getNavigation().moveTo(target.getX() + 0.5, target.getY(), target.getZ() + 0.5, WALK_SPEED);
 	}
 
@@ -55,6 +56,12 @@ public class LlamaPoopGoal extends Goal {
 
 	@Override
 	public void tick() {
+		// The goal's own paths clear the target when the business is done, and the
+		// selector calls stop() whenever something else claims the MOVE flag, which
+		// clears it too. Either way this can be ticked once more with nothing to walk
+		// to, and a llama needing the toilet is not worth crashing the server over.
+		if (target == null) return;
+
 		ticksWalking++;
 		ServerLevel world = (ServerLevel) llama.level();
 		PoopUrge urge = (PoopUrge) llama;
