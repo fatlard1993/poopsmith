@@ -33,12 +33,16 @@ Bats finally earn their keep. Every bat drops guano roughly once per day on its 
 - **Gunpowder**: 1 guano + 1 charcoal (charcoal specifically, coal will not do) makes 3 gunpowder. Saltpeter is saltpeter.
 - **Dung fuel**: the whole family burns. Poop and poop layers smelt about 1.5 items each, guano and guano layers twice that, and the full blocks run a furnace for 4 of their item's worth. Nothing beats coal per item; the point is having somewhere useful to shovel it all.
 
-## Requires Pandorical
+## Pandorical
 
-This mod is entirely server-side and depends on [Pandorical](../pandorical) for every client-facing piece: block/item/asset sync (textures ship in this jar; Pandorical's virtual resource pack delivers them), the thrown-poop renderer, the server-pushed digestive HUD (including standing in for vanilla's hunger bar), the poopsmith gloves overlay, and the poop keybind (a Pandorical pooled keybind, so no poopsmith jar is ever needed on a client). Players on Pandorical clients get the HUD and the keybind; vanilla clients still fully participate server-side, they just can't see the bar or go voluntarily. Accidents happen.
+Poopsmith runs server-side, and Pandorical is a hard dependency: it carries every client-facing piece. Block, item and asset sync (the textures ship in this jar; Pandorical's virtual resource pack delivers them), the thrown-poop renderer, the digestive HUD including its takeover of vanilla's hunger bar, the poopsmith's gloves overlay, and the poop keybind, which is a pooled Pandorical keybind so no poopsmith jar ever reaches a client.
 
-Targets the Minecraft, Fabric Loader, and Fabric API versions declared in this mod's `gradle.properties`.
+Clients are the optional half. A player on a Pandorical client gets the bar and the keybind; a player on a vanilla client participates fully server-side but cannot see the bar or go voluntarily. Accidents happen.
+
+## Installation
+
+Install server-side alongside its declared dependencies (see `fabric.mod.json`); connecting clients need only Pandorical. Version targets live in `gradle.properties` (Minecraft, loader, Fabric API) and `fabric.mod.json` (Java).
 
 ## License
 
-MIT
+MIT, see [LICENSE](LICENSE).
