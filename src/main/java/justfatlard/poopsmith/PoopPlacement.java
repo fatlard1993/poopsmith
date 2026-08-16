@@ -203,9 +203,23 @@ public final class PoopPlacement {
 
 	/** Horizontal radius villagers scan for a latrine pit (a poop block column). */
 	public static final int LATRINE_SEARCH_RADIUS = 32;
-	private static final int LATRINE_SEARCH_HEIGHT = 4;
-	/** Column height above a pit's bottom block that still counts as the same pit. */
-	private static final int LATRINE_COLUMN_SCAN = 4;
+	/**
+	 * Vertical half-height of the pit search box, measured from the searcher's
+	 * own feet. A village-generated latrine's seed block sits
+	 * {@link LatrinePitProcessor#TARGET_PIT_DEPTH} rows below the hut floor a
+	 * villager stands on, so anything under 5 cannot see the pit in its own
+	 * privy; 8 leaves room for hand-dug pits and for searching from a street
+	 * that sits a little above or below the hut.
+	 */
+	private static final int LATRINE_SEARCH_HEIGHT = 8;
+	/**
+	 * Column height above a pit's bottom block that still counts as the same
+	 * pit. The generated pit is 4 open blocks deep, so the scan needs at least
+	 * 4 to walk a fully converted column back up to the rim; 6 keeps a margin
+	 * for deeper hand-dug pits and lets a full pit heap a little above grade
+	 * before callers treat it as full and fall back to the street.
+	 */
+	private static final int LATRINE_COLUMN_SCAN = 6;
 
 	/**
 	 * Nearest depositable position above a poop block within

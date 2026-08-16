@@ -51,8 +51,10 @@ public final class PlayerPoopManager {
 	private static final int ACCIDENT_NAUSEA_TICKS = 110;
 
 	// Shift-aimed voluntary poops go one block behind the player with a short
-	// drop scan: stand at a latrine pit's edge facing away and go IN
-	private static final int SHIFT_POOP_MAX_DROP = 3;
+	// drop scan: stand at a latrine pit's edge facing away and go IN. Must
+	// clear the generated pit, whose depositable spot is 4 blocks below the
+	// rim a player stands on; 6 covers deeper hand-dug pits too
+	private static final int SHIFT_POOP_MAX_DROP = 6;
 
 	/** Foods that upset the gut: raw meat, rot, and suspicious edibles. */
 	private static final Set<Item> RISKY_FOODS = Set.of(

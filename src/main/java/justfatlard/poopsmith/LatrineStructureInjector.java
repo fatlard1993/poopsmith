@@ -3,11 +3,13 @@ package justfatlard.poopsmith;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorList;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -21,10 +23,17 @@ import org.slf4j.LoggerFactory;
  * village-mail's VillageStructureInjector: injection happens at
  * SERVER_STARTING, before world generation, and resets on stop so
  * singleplayer world reloads re-inject.
+ *
+ * One latrine variant per biome, so a spruce-and-snow village gets a spruce
+ * privy and not an oak one: village-mail's post offices work the same way, and
+ * the per-biome template ids match the files create_latrine.py writes.
  */
 public final class LatrineStructureInjector {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Main.MOD_ID);
 	private static boolean injected = false;
+
+	// Index-matched with BIOMES below: BIOMES[i]'s latrine goes into HOUSES_POOLS[i]
+	private static final String[] BIOMES = {"plains", "desert", "savanna", "snowy", "taiga"};
 
 	private static final Identifier[] HOUSES_POOLS = {
 		Identifier.fromNamespaceAndPath("minecraft", "village/plains/houses"),
@@ -34,16 +43,22 @@ public final class LatrineStructureInjector {
 		Identifier.fromNamespaceAndPath("minecraft", "village/taiga/houses")
 	};
 
-	private static final Identifier LATRINE_STRUCTURE = Identifier.fromNamespaceAndPath(Main.MOD_ID, "latrine");
 	// Vanilla's plains houses pool totals 87 weight across 37 entries, so a
 	// weight of 5 is ~5% per house slot: roughly half of small villages and
 	// two thirds of large ones get a privy, and the rest are what the
 	// dig-a-latrine quest is for. Weight 1 put it at 11% and nobody found one.
 	private static final int LATRINE_WEIGHT = 5;
 
+	/** Template id for a biome's latrine variant, e.g. poopsmith:latrine_taiga. */
+	public static Identifier latrineTemplate(String biome) {
+		return Identifier.fromNamespaceAndPath(Main.MOD_ID, "latrine_" + biome);
+	}
+
 	private LatrineStructureInjector() {}
 
 	public static void register() {
+		LatrinePitProcessor.register();
+
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> injected = false);
 
 		ServerLifecycleEvents.SERVER_STARTING.register(server -> {
@@ -53,24 +68,33 @@ public final class LatrineStructureInjector {
 			Registry<StructureTemplatePool> poolRegistry =
 				server.registryAccess().lookupOrThrow(Registries.TEMPLATE_POOL);
 
-			// RIGID matches vanilla houses: the entrance jigsaw anchors the
-			// piece at street level, and the pit in the foundation must not
-			// be warped to terrain. `single`, NOT `legacy`: legacy elements
-			// add BlockIgnoreProcessor.STRUCTURE_AND_AIR (verified in the
-			// game jar), which skips every explicit air block, so the sunk
-			// pit shaft and the hut interior would stay filled with terrain
-			StructurePoolElement latrineElement = StructurePoolElement.single(
-				LATRINE_STRUCTURE.toString()
-			).apply(StructureTemplatePool.Projection.RIGID);
+			// Held directly rather than through a data-pack processor list:
+			// this pool element only ever exists at runtime, so nothing has to
+			// resolve the list from a registry
+			Holder<StructureProcessorList> pitProcessor = Holder.direct(
+				new StructureProcessorList(List.of(LatrinePitProcessor.INSTANCE)));
 
-			for (Identifier poolId : HOUSES_POOLS) {
+			for (int i = 0; i < BIOMES.length; i++) {
+				String biome = BIOMES[i];
+				Identifier poolId = HOUSES_POOLS[i];
+
+				// RIGID matches vanilla houses: the entrance jigsaw anchors the
+				// piece at street level, and the pit in the foundation must not
+				// be warped to terrain. `single`, NOT `legacy`: legacy elements
+				// add BlockIgnoreProcessor.STRUCTURE_AND_AIR (verified in the
+				// game jar), which skips every explicit air block, so the sunk
+				// pit shaft and the hut interior would stay filled with terrain
+				StructurePoolElement latrineElement = StructurePoolElement.single(
+					latrineTemplate(biome).toString(), pitProcessor
+				).apply(StructureTemplatePool.Projection.RIGID);
+
 				StructureTemplatePool pool = poolRegistry.getValue(poolId);
 				if (pool == null) {
 					LOGGER.error("[{}] Village pool not found: {}", Main.MOD_ID, poolId);
 					continue;
 				}
 				if (addElementToPool(pool, latrineElement, LATRINE_WEIGHT)) {
-					LOGGER.info("[{}] Added latrine to {}", Main.MOD_ID, poolId);
+					LOGGER.info("[{}] Added {} latrine to {}", Main.MOD_ID, biome, poolId);
 				}
 			}
 		});
