@@ -150,12 +150,22 @@ class StructureBuilder:
 
 
 # ══════════════════════════════════════════════════════════════
-# VILLAGE LATRINE — 5w x 5h x 5d
-# Cobblestone foundation and wall base, oak log corners, oak
-# plank walls and raised floor, slab roof. The pit: a 1-deep
-# hole in the floor at the back, poop block at the bottom.
-# Door on the z=0 face; the entrance jigsaw faces north (-z is
+# VILLAGE LATRINE — 5w x 6h x 5d
+# Vertical layout follows the vanilla house convention verified against
+# this snapshot's plains_small_house_1/2: the entrance jigsaw sits in the
+# GRADE row and the door's lower half is exactly one row above it (vanilla
+# uses the jigsaw's final_state as the doorstep). Rows below the jigsaw
+# sink under street level, which is where the pit gets its depth: two sunk
+# rows make a pit whose poop-block floor is 2 open blocks below the hut
+# floor. Door on the z=0 face; the entrance jigsaw faces north (-z is
 # north in template space, so z=0 is the street side).
+#
+#   y0: pit floor row (poop block in the pit column, cobble elsewhere)
+#   y1: sunk shaft row (air in the pit column, cobble elsewhere)
+#   y2: GRADE: cobble floor, jigsaw at the doorway, pit opening
+#   y3: wall base, door lower
+#   y4: walls, door upper, windows
+#   y5: slab roof
 # ══════════════════════════════════════════════════════════════
 
 def build_latrine():
@@ -171,32 +181,29 @@ def build_latrine():
 
     for x in range(W):
         for z in range(D):
-            # y0: cobblestone pad; poop block under the pit; jigsaw at doorway
+            # y0-y1: sunk foundation rows carrying the pit shaft
+            b.put(x, 0, z, 'poopsmith:poop_block' if (x, z) == PIT else 'minecraft:cobblestone')
+            b.put(x, 1, z, 'minecraft:air' if (x, z) == PIT else 'minecraft:cobblestone')
+
+            # y2: grade row: floor, pit opening, entrance jigsaw (its
+            # final_state cobble is the doorstep, vanilla-style)
             if (x, z) == PIT:
-                b.put(x, 0, z, 'poopsmith:poop_block')
+                b.put(x, 2, z, 'minecraft:air')
             elif x == 2 and z == 0:
-                b.put_entrance_jigsaw(x, 0, z, 'north_up', 'minecraft:cobblestone')
+                b.put_entrance_jigsaw(x, 2, z, 'north_up', 'minecraft:cobblestone')
             else:
-                b.put(x, 0, z, 'minecraft:cobblestone')
+                b.put(x, 2, z, 'minecraft:cobblestone')
 
-            # y1: cobble wall base ring, plank floor, the pit hole
-            if (x, z) == PIT:
-                b.put(x, 1, z, 'minecraft:air')
-            elif is_wall(x, z):
-                b.put(x, 1, z, 'minecraft:cobblestone')
-            else:
-                b.put(x, 1, z, 'minecraft:oak_planks')
-
-            # y2-y3: walls with log corners, door, windows; interior air so
-            # worldgen placement clears whatever terrain pokes inside
-            for y in (2, 3):
+            # y3-y4: walls with log corners, door one row above the jigsaw,
+            # windows; interior air so worldgen clears terrain inside
+            for y in (3, 4):
                 if is_corner(x, z):
                     b.put(x, y, z, 'minecraft:oak_log', {'axis': 'y'})
                 elif x == 2 and z == 0:
-                    half = 'lower' if y == 2 else 'upper'
+                    half = 'lower' if y == 3 else 'upper'
                     b.put(x, y, z, 'minecraft:oak_door',
                           {'facing': 'south', 'half': half, 'hinge': 'left', 'open': 'false'})
-                elif y == 3 and z == 2 and x in (0, W - 1):
+                elif y == 4 and z == 2 and x in (0, W - 1):
                     b.put(x, y, z, 'minecraft:glass_pane',
                           {'north': 'true', 'south': 'true', 'east': 'false', 'west': 'false'})
                 elif is_wall(x, z):
@@ -204,8 +211,8 @@ def build_latrine():
                 else:
                     b.put(x, y, z, 'minecraft:air')
 
-            # y4: flat slab roof
-            b.put(x, 4, z, 'minecraft:oak_slab', {'type': 'bottom'})
+            # y5: flat slab roof
+            b.put(x, 5, z, 'minecraft:oak_slab', {'type': 'bottom'})
 
     b.save(OUT)
 

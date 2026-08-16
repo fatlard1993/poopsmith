@@ -60,7 +60,9 @@ public class LlamaPoopGoal extends Goal {
 		PoopUrge urge = (PoopUrge) llama;
 
 		if (llama.blockPosition().distSqr(target) <= ARRIVE_DIST_SQ) {
-			if (PoopPlacement.deposit(world, target).isPresent()) {
+			if (llama.isInWater()) {
+				PoopPlacement.waterPoop(world, llama);
+			} else if (PoopPlacement.deposit(world, target).isPresent()) {
 				PoopPlacement.playFart(world, llama);
 			}
 			urge.poopsmith$onPooped();

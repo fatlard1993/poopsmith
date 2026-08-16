@@ -47,7 +47,10 @@ public abstract class VillagerMixin {
 	@Unique private static final int RESEED_JITTER_TICKS = 4000;
 	@Unique private static final int RETRY_TICKS = 200;
 	@Unique private static final int TRIP_TIMEOUT_TICKS = 500;
-	@Unique private static final double ARRIVE_DIST_SQ = 4.0;
+	// Must cover standing at a latrine pit's rim above a 2-deep shaft: the
+	// deposit target sits 2-3 below the villager's feet at the edge
+	// (distSqr 5-6), and the target only rises as the pit fills
+	@Unique private static final double ARRIVE_DIST_SQ = 8.0;
 	@Unique private static final float WALK_SPEED = 0.55F;
 	@Unique private static final int CLOSE_ENOUGH_DIST = 1;
 	// Outlives the once-per-tick reassert, short enough to fade fast if the
@@ -117,7 +120,12 @@ public abstract class VillagerMixin {
 
 		if (self.blockPosition().distSqr(target) <= ARRIVE_DIST_SQ) {
 			poopsmith$endTrip(self);
-			if (PoopPlacement.deposit(world, target).isPresent()) {
+			if (self.isInWater()) {
+				// Wading villager at the pit's edge: disperse rather than
+				// plant a layer underwater
+				PoopPlacement.waterPoop(world, self);
+				poopsmith$reseed(self);
+			} else if (PoopPlacement.deposit(world, target).isPresent()) {
 				PoopPlacement.playFart(world, self);
 				poopsmith$reseed(self);
 			} else {

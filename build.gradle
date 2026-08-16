@@ -18,6 +18,11 @@ dependencies {
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	implementation(project(':pandorical'))
+
+	// Optional: village-quests integration (compile-only, not bundled at runtime)
+	if (file("../village-quests/build/libs/village-quests-1.0.0.jar").exists()) {
+		compileOnly files("../village-quests/build/libs/village-quests-1.0.0.jar")
+	}
 }
 
 processResources {

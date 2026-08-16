@@ -283,6 +283,8 @@ public class Main implements ModInitializer {
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
 			PlayerPoopManager.onPlayerDisconnect(handler.getPlayer().getUUID()));
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> PlayerPoopManager.onServerStopping());
+		// The first-ever-Nether-entry scare is detected in PlayerPoopManager's
+		// per-tick loop (see checkFirstNetherEntry for why not an event)
 
 		// Forced decay: breaking any poop-family block without a shovel
 		// applies the decay's bonemeal action instead of drops (drops are
@@ -305,6 +307,12 @@ public class Main implements ModInitializer {
 
 		LatrineStructureInjector.register();
 		VillageBuilderIntegration.registerStructures();
+
+		// Latrine quests: guarded class load, LatrineQuestRegistration
+		// references village-quests types directly (compileOnly)
+		if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("village-quests-justfatlard")) {
+			justfatlard.poopsmith.integration.LatrineQuestRegistration.register();
+		}
 
 		LOGGER.info("Loaded poopsmith (server-side with Pandorical)");
 	}

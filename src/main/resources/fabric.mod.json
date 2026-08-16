@@ -29,6 +29,7 @@
     "pandorical": "*"
   },
   "suggests": {
-    "village-builder": "*"
+    "village-builder": "*",
+    "village-quests-justfatlard": "*"
   }
 }

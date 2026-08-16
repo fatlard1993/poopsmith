@@ -10,6 +10,7 @@
   "key.poopsmith.poop": "Poop",
   "key.category.poopsmith.main": "Poopsmith",
   "message.poopsmith.accident": "You had an accident!",
+  "message.poopsmith.nether_accident": "The Nether is exactly as terrifying as your colon suspected.",
   "message.poopsmith.diarrhea": "Your stomach gurgles ominously...",
   "message.poopsmith.guano_cure": "Chalky, vile, and effective. Your gut settles at once.",
   "message.poopsmith.not_ready": "You don't need to go yet"

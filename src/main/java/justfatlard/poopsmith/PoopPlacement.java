@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -84,6 +85,13 @@ public final class PoopPlacement {
 		BlockPos start = bat.blockPosition();
 		for (int dy = 0; dy <= BAT_DROP_SCAN; dy++) {
 			BlockPos pos = start.below(dy);
+			// Guano meeting a water surface sprays there instead of threading
+			// down to plant a submerged layer
+			if (world.getFluidState(pos).is(FluidTags.WATER)) {
+				waterPoopAt(world, pos.getX() + 0.5, pos.getY() + 0.8, pos.getZ() + 0.5);
+				playSqueak(world, bat);
+				return true;
+			}
 			if (tryDepositAt(world, pos, Main.GUANO_LAYER_BLOCK)) {
 				playSqueak(world, bat);
 				return true;
@@ -111,8 +119,58 @@ public final class PoopPlacement {
 			0.4F, 1.4F + random.nextFloat() * 0.3F);
 	}
 
-	/** Deposit for a regular animal: at the animal's own feet. */
+	/**
+	 * Aimed deposit with a short downward scan, the batPoop pattern capped for
+	 * ground use: deposit at {@code origin} or the first spot below it that
+	 * takes a layer, stopping at any solid obstruction. Lets a player at a
+	 * latrine pit's edge drop into the pit (where a capped stack on a poop
+	 * block converts via the compost-pit rule inside tryDepositAt). Empty when
+	 * nothing within {@code maxDrop} could take the layer; callers fall back.
+	 */
+	public static Optional<BlockPos> depositWithDrop(ServerLevel world, BlockPos origin, int maxDrop) {
+		for (int dy = 0; dy <= maxDrop; dy++) {
+			BlockPos pos = origin.below(dy);
+			if (tryDepositAt(world, pos, Main.POOP_LAYER_BLOCK)) return Optional.of(pos);
+			BlockState state = world.getBlockState(pos);
+			if (!state.isAir() && !state.canBeReplaced() && !state.is(Main.POOP_LAYER_BLOCK)) {
+				return Optional.empty();
+			}
+		}
+		return Optional.empty();
+	}
+
+	// Water pooping: no layer survives underwater, so the poop disperses as a
+	// brown particle cloud instead (the PoopEntity splat pattern, denser,
+	// with a slight drift that reads as dissolving in the current)
+	private static final int WATER_POOP_PARTICLES = 24;
+	private static final double WATER_POOP_SPREAD = 0.4;
+	private static final double WATER_POOP_DRIFT = 0.05;
+
+	/** Waterborne deposit: a dispersing cloud at the entity, muffled fart included. */
+	public static boolean waterPoop(ServerLevel world, Entity entity) {
+		return waterPoopAt(world, entity.getX(), entity.getY() + entity.getBbHeight() * 0.3, entity.getZ());
+	}
+
+	/** Positional variant, e.g. a bat's guano meeting a water surface below. */
+	public static boolean waterPoopAt(ServerLevel world, double x, double y, double z) {
+		world.sendParticles(
+			new net.minecraft.core.particles.ItemParticleOption(
+				net.minecraft.core.particles.ParticleTypes.ITEM, Main.POOP_ITEM),
+			x, y, z, WATER_POOP_PARTICLES,
+			WATER_POOP_SPREAD, WATER_POOP_SPREAD, WATER_POOP_SPREAD, WATER_POOP_DRIFT);
+		// The fart, muffled by water: quieter and pitched lower than on land
+		RandomSource random = world.getRandom();
+		world.playSound(null, x, y, z,
+			SoundEvents.PLAYER_BURP, SoundSource.NEUTRAL,
+			0.55F, 0.22F + random.nextFloat() * 0.1F);
+		return true;
+	}
+
+	/** Deposit for a regular animal: at the animal's own feet, or a water cloud when swimming. */
 	public static boolean animalPoop(ServerLevel world, Entity animal) {
+		if (animal.isInWater()) {
+			return waterPoop(world, animal);
+		}
 		Optional<BlockPos> placed = deposit(world, animal.blockPosition());
 		if (placed.isPresent()) {
 			playFart(world, animal);
@@ -176,6 +234,52 @@ public final class PoopPlacement {
 			}
 		}
 		return Optional.ofNullable(best);
+	}
+
+	/**
+	 * Every latrine pit bottom (the bottom-most poop block of a column)
+	 * within the latrine scan range. Used by the quest integration to decide
+	 * whether a village has a latrine and how full it is.
+	 */
+	public static java.util.List<BlockPos> findLatrinePits(ServerLevel world, BlockPos center) {
+		java.util.List<BlockPos> pits = new java.util.ArrayList<>();
+		for (BlockPos pos : BlockPos.betweenClosed(
+				center.offset(-LATRINE_SEARCH_RADIUS, -LATRINE_SEARCH_HEIGHT, -LATRINE_SEARCH_RADIUS),
+				center.offset(LATRINE_SEARCH_RADIUS, LATRINE_SEARCH_HEIGHT, LATRINE_SEARCH_RADIUS))) {
+			if (!world.getBlockState(pos).is(Main.POOP_BLOCK)) continue;
+			if (world.getBlockState(pos.below()).is(Main.POOP_BLOCK)) continue;
+			pits.add(pos.immutable());
+		}
+		return pits;
+	}
+
+	/**
+	 * Open-air poop or guano layer stacks within the latrine scan range:
+	 * street piles, llama spots, and accident sites, but NOT layers under a
+	 * roof (a covered latrine pit doesn't count as mess). Each layer
+	 * blockstate counts once regardless of its layer count.
+	 */
+	public static int countOpenAirStacks(ServerLevel world, BlockPos center) {
+		int count = 0;
+		for (BlockPos pos : BlockPos.betweenClosed(
+				center.offset(-LATRINE_SEARCH_RADIUS, -LATRINE_SEARCH_HEIGHT, -LATRINE_SEARCH_RADIUS),
+				center.offset(LATRINE_SEARCH_RADIUS, LATRINE_SEARCH_HEIGHT, LATRINE_SEARCH_RADIUS))) {
+			BlockState state = world.getBlockState(pos);
+			if (!state.is(Main.POOP_LAYER_BLOCK) && !state.is(Main.GUANO_LAYER_BLOCK)) continue;
+			if (world.canSeeSky(pos.above())) count++;
+		}
+		return count;
+	}
+
+	/** Converted poop blocks stacked above a pit's seed block: how full it is. */
+	public static int pitAccumulation(ServerLevel world, BlockPos pitBottom) {
+		int count = 0;
+		BlockPos cursor = pitBottom.above();
+		while (world.getBlockState(cursor).is(Main.POOP_BLOCK)) {
+			count++;
+			cursor = cursor.above();
+		}
+		return count;
 	}
 
 	private static BlockPos depositableAbove(ServerLevel world, BlockPos pitBottom) {

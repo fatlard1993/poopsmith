@@ -50,6 +50,10 @@ public final class PlayerPoopManager {
 	private static final int NAUSEA_PULSE_INTERVAL_TICKS = 300; // every 15s of diarrhea
 	private static final int ACCIDENT_NAUSEA_TICKS = 110;
 
+	// Shift-aimed voluntary poops go one block behind the player with a short
+	// drop scan: stand at a latrine pit's edge facing away and go IN
+	private static final int SHIFT_POOP_MAX_DROP = 3;
+
 	/** Foods that upset the gut: raw meat, rot, and suspicious edibles. */
 	private static final Set<Item> RISKY_FOODS = Set.of(
 		Items.ROTTEN_FLESH, Items.SPIDER_EYE, Items.POISONOUS_POTATO,
@@ -74,6 +78,9 @@ public final class PlayerPoopManager {
 
 		PoopLevelData data = PoopLevelData.get(server);
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+			DigestiveHud.syncVisibility(player, data.getLevel(player.getUUID()));
+			checkFirstNetherEntry(player, data);
+
 			int remaining = data.getDiarrheaTicks(player.getUUID());
 			if (remaining <= 0) continue;
 			data.setDiarrheaTicks(player.getUUID(), remaining - 1);
@@ -150,7 +157,7 @@ public final class PlayerPoopManager {
 				Component.translatable("message.poopsmith.not_ready").withStyle(ChatFormatting.GRAY), true);
 			return;
 		}
-		poop(player, data, false);
+		poop(player, data, null);
 	}
 
 	private static void addLevel(ServerPlayer player, int amount) {
@@ -161,29 +168,89 @@ public final class PlayerPoopManager {
 		int after = data.setLevel(player.getUUID(), before + amount);
 		if (after == before) return;
 		if (after >= PoopLevelData.MAX_LEVEL) {
-			poop(player, data, true);
+			poop(player, data, "message.poopsmith.accident");
 		} else {
-			PoopHud.showOrUpdate(player, after);
+			DigestiveHud.showOrUpdate(player, after);
 		}
 	}
 
-	/** Shared voluntary/accident resolution: layer, fart, reset, hunger cost. */
-	private static void poop(ServerPlayer player, PoopLevelData data, boolean accident) {
+	/**
+	 * Shared voluntary/accident resolution: layer (or water cloud), fart,
+	 * reset, hunger cost. {@code accidentMessageKey} null means voluntary;
+	 * otherwise the accident extras (nausea, message) apply with that lang
+	 * key, so the nether scare can speak in its own voice.
+	 */
+	private static void poop(ServerPlayer player, PoopLevelData data, String accidentMessageKey) {
 		ServerLevel world = (ServerLevel) player.level();
 
-		PoopPlacement.deposit(world, player.blockPosition());
-		PoopPlacement.playFart(world, player);
+		if (player.isInWater()) {
+			// No layer survives underwater: disperse instead (bar semantics
+			// unchanged); waterPoop brings its own muffled fart
+			PoopPlacement.waterPoop(world, player);
+		} else {
+			// Sneaking aims a voluntary poop one block behind (accidents
+			// don't aim); if nothing behind can take it, fall back to
+			// at-feet so the poop is never lost
+			net.minecraft.core.BlockPos landed = null;
+			if (accidentMessageKey == null && player.isShiftKeyDown()) {
+				landed = PoopPlacement.depositWithDrop(world,
+					player.blockPosition().relative(player.getDirection().getOpposite()),
+					SHIFT_POOP_MAX_DROP).orElse(null);
+			}
+			if (landed == null) {
+				landed = PoopPlacement.deposit(world, player.blockPosition()).orElse(null);
+			}
+			PoopPlacement.playFart(world, player);
+			if (landed != null) {
+				recordPublicWitnesses(world, player, landed);
+			}
+		}
 
 		data.setLevel(player.getUUID(), 0);
 		FoodData foodData = player.getFoodData();
 		foodData.setFoodLevel(Math.max(0, foodData.getFoodLevel() - 1));
 
-		if (accident) {
+		if (accidentMessageKey != null) {
 			player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, ACCIDENT_NAUSEA_TICKS, 0));
 			player.sendSystemMessage(
-				Component.translatable("message.poopsmith.accident").withStyle(ChatFormatting.GOLD), false);
+				Component.translatable(accidentMessageKey).withStyle(ChatFormatting.GOLD), false);
 		}
-		PoopHud.flush(player);
+		DigestiveHud.flush(player);
+	}
+
+	// Public pooping has witnesses. A covered latrine pit is naturally
+	// private (no sky above the deposit), which quietly teaches using them.
+	private static final double WITNESS_RANGE = 12.0;
+
+	private static void recordPublicWitnesses(ServerLevel world, ServerPlayer player,
+			net.minecraft.core.BlockPos landed) {
+		if (!world.canSeeSky(landed.above())) return;
+		MinecraftServer server = world.getServer();
+		PoopLevelData data = PoopLevelData.get(server);
+		for (net.minecraft.world.entity.npc.villager.Villager villager : world.getEntitiesOfClass(
+				net.minecraft.world.entity.npc.villager.Villager.class,
+				new net.minecraft.world.phys.AABB(player.blockPosition()).inflate(WITNESS_RANGE),
+				v -> v.hasLineOfSight(player))) {
+			data.recordWitness(villager.getUUID(), player.getUUID(), world.getGameTime());
+		}
+	}
+
+	/**
+	 * First-ever Nether entry: a coin flip on whether the player poops
+	 * themselves. Rolled exactly once per player ever (the flag persists
+	 * regardless of the roll's outcome); fear does not consult the bar.
+	 * Detected in the per-tick loop rather than a dimension-change event:
+	 * verified empirically that Fabric's AFTER_PLAYER_CHANGE_LEVEL does not
+	 * fire for command teleports on this snapshot, and a presence check
+	 * catches every arrival mechanism (portal, teleport, whatever comes).
+	 */
+	private static void checkFirstNetherEntry(ServerPlayer player, PoopLevelData data) {
+		if (player.level().dimension() != net.minecraft.world.level.Level.NETHER) return;
+		if (data.hasEnteredNether(player.getUUID())) return;
+		data.markEnteredNether(player.getUUID());
+		if (player.getRandom().nextFloat() < 0.5F) {
+			poop(player, data, "message.poopsmith.nether_accident");
+		}
 	}
 
 	/** Deferred-push join hook (Pandorical handshake lands after JOIN). */
@@ -191,12 +258,12 @@ public final class PlayerPoopManager {
 		scheduleDelayed(20, () -> {
 			MinecraftServer server = player.level().getServer();
 			if (server == null || player.hasDisconnected()) return;
-			PoopHud.showOrUpdate(player, PoopLevelData.get(server).getLevel(player.getUUID()));
+			DigestiveHud.showOrUpdate(player, PoopLevelData.get(server).getLevel(player.getUUID()));
 		});
 	}
 
 	public static void onPlayerDisconnect(UUID uuid) {
-		PoopHud.onPlayerDisconnect(uuid);
+		DigestiveHud.onPlayerDisconnect(uuid);
 	}
 
 	public static void onServerStopping() {

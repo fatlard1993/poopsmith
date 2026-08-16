@@ -110,53 +110,169 @@ def planks(size, seed):
     return rows
 
 
-# Intestine HUD tube: hunger-bar width, gentle S-curves at the vanilla pip
-# pitch so the curves read as weaving between the drumsticks above. All the
-# visual judgment calls live in these constants for easy tuning.
-INTESTINE_W, INTESTINE_H = 81, 3
-INTESTINE_PITCH = 8       # curve period; matches vanilla pip spacing
-INTESTINE_AMPLITUDE = 0.4 # curve depth in px; at ribbon size, a subtle wiggle
-INTESTINE_PHASE = 2.0     # slides dips relative to drumstick columns
-TUBE_RADIUS = 1.1         # pink flesh half-thickness
-BORE_RADIUS = 1.2         # brown fill half-thickness
-OUTLINE_RADIUS = 3.2
+# Digestive tract HUD: the whole assembly (stomach, intestine, exit coil) fits
+# inside the vanilla hunger bar's footprint, 81x9, and nothing may spill past
+# it: the XP bar sits immediately below and the air bubbles row immediately
+# above. Read left to right as one continuous tract, per the design reference
+# in design/digestive_hud_reference.png. Colors carry the meaning: PINK is
+# organ wall, AMBER is food, BROWN is waste, and both fills sit inside the
+# walls. All the visual judgment calls live in these constants.
+TRACT_W, TRACT_H = 81, 9
 
-# Muted, low-contrast pinks: the tube should read as background plumbing
+# Horizontal budget. Stomach compact at the left, the squiggle taking most of
+# the width, a short straight run into the exit coil.
+STOMACH_X1 = 14            # stomach occupies x 0..14
+TUBE_X0, TUBE_X1 = 15, 69  # squiggle span
+STUB_X1 = 74               # straight run from the squiggle into the sphincter
+
+# Squiggle: pitch 9 over 54px gives exactly 6 peaks, and the phase puts a zero
+# crossing at both ends so the tube leaves the stomach and reaches the exit at
+# mid height rather than mid-peak. Amplitude is what the 9px row can afford
+# once the walls are drawn.
+TUBE_PITCH = 9
+TUBE_AMPLITUDE = 1.7
+TUBE_BASELINE = 4.5
+TUBE_PHASE = 3
+TUBE_RADIUS = 1.0          # bore half-thickness; the wall is drawn outside it
+TUBE_WALL = 0.9
+
+# Sphincter pucker terminating the tract. Nothing is drawn past it: the poop
+# item icon the flush pops is the only thing that ever appears there, and only
+# while flushing.
+PUCKER_CX, PUCKER_CY = 77.5, 4.5
+PUCKER_R_OUTER = 2.8
+PUCKER_R_MID = 1.6
+PUCKER_R_HOLE = 0.8
+PUCKER_FILL_X = 78         # waste runs into the pucker hole, not past it
+
+# Stomach: an upright bean, esophagus stub entering top left, outlet leaving
+# right at mid height straight into the tube. The bite ellipse is what turns a
+# blob into a stomach's lesser curvature.
+STOMACH_CX, STOMACH_CY = 7.0, 4.8
+STOMACH_RX, STOMACH_RY = 6.0, 3.7
+STOMACH_BITE_CX, STOMACH_BITE_CY = 3.5, -0.6
+STOMACH_BITE_RX, STOMACH_BITE_RY = 3.6, 2.6
+ESOPHAGUS_X0, ESOPHAGUS_X1 = 3, 4
+ESOPHAGUS_Y1 = 2
+PYLORUS_Y0, PYLORUS_Y1 = 4, 5   # outlet rows, aligned with TUBE_BASELINE
+
+# Muted, low-contrast pinks: the walls should read as background plumbing so
+# the amber and brown contents carry the signal
 PINK = (0xC9, 0x8F, 0x96, 0xFF)
 PINK_DARK = (0xAD, 0x72, 0x79, 0xFF)
 PINK_OUTLINE = (0x7A, 0x4C, 0x52, 0xFF)
+PUCKER_HOLE = (0x5A, 0x3A, 0x40, 0xFF)
+
+# Amber chyme, deliberately far from the waste browns
+AMBER = (0xE8, 0xA3, 0x1E, 0xFF)
+AMBER_DARK = (0xC2, 0x84, 0x14, 0xFF)
+AMBER_LIGHT = (0xF6, 0xC0, 0x52, 0xFF)
 
 
-def intestine_center(x):
-    return 1.5 + INTESTINE_AMPLITUDE * math.sin(2 * math.pi * (x + INTESTINE_PHASE) / INTESTINE_PITCH)
+def tube_center(x):
+    return TUBE_BASELINE + TUBE_AMPLITUDE * math.sin(
+        2 * math.pi * (x + TUBE_PHASE) / TUBE_PITCH)
 
 
-def intestine_tube(seed):
-    """The empty tube: pink flesh with a darker outline along a sine path."""
+def _stomach_interior():
+    interior = set()
+    for x in range(STOMACH_X1 + 1):
+        for y in range(TRACT_H):
+            fx, fy = x + 0.5, y + 0.5
+            in_body = math.hypot((fx - STOMACH_CX) / STOMACH_RX,
+                                 (fy - STOMACH_CY) / STOMACH_RY) <= 1.0
+            bitten = math.hypot((fx - STOMACH_BITE_CX) / STOMACH_BITE_RX,
+                                (fy - STOMACH_BITE_CY) / STOMACH_BITE_RY) <= 1.0
+            in_neck = ESOPHAGUS_X0 <= x <= ESOPHAGUS_X1 and fy <= ESOPHAGUS_Y1
+            in_outlet = x >= STOMACH_CX and PYLORUS_Y0 <= y <= PYLORUS_Y1
+            if (in_body and not bitten) or in_neck or in_outlet:
+                interior.add((x, y))
+    return interior
+
+
+def _tube_bore():
+    """Contents path: a THIN line down the middle of the tube, not the tube's
+    full width, so pink lining stays visible on both sides of the waste and it
+    reads as flowing THROUGH the intestine rather than replacing it.
+
+    Rasterized with per-column vertical continuity (Bresenham-style): a pure
+    distance-to-centerline test drops pixels on the squiggle's steep segments
+    and the line breaks into dashes."""
+    bore = set()
+    prev = None
+    for x in range(TUBE_X0, PUCKER_FILL_X):
+        c = tube_center(x) if x <= TUBE_X1 else TUBE_BASELINE
+        row = min(TRACT_H - 1, max(0, round(c - 0.5)))
+        lo, hi = (row, row) if prev is None else (min(row, prev), max(row, prev))
+        for y in range(lo, hi + 1):
+            bore.add((x, y))
+        prev = row
+    return bore
+
+
+def tract_walls(seed):
+    """Everything permanently visible: stomach lining, tube walls, exit mouth
+    and the little brown coil past it."""
     rng = random.Random(seed)
-    rows = [[CLEAR] * INTESTINE_W for _ in range(INTESTINE_H)]
-    for x in range(INTESTINE_W):
-        c = intestine_center(x)
-        for y in range(INTESTINE_H):
+    rows = [[CLEAR] * TRACT_W for _ in range(TRACT_H)]
+    interior = _stomach_interior()
+    bore = _tube_bore()
+
+    # Tube walls hug the bore
+    for x in range(TUBE_X0, STUB_X1 + 1):
+        c = tube_center(x) if x <= TUBE_X1 else TUBE_BASELINE
+        for y in range(TRACT_H):
             d = abs(y + 0.5 - c)
             if d <= TUBE_RADIUS:
                 rows[y][x] = PINK_DARK if rng.random() < 0.18 else PINK
-            elif d <= OUTLINE_RADIUS:
+            elif d <= TUBE_RADIUS + TUBE_WALL:
                 rows[y][x] = PINK_OUTLINE
+
+    # Stomach: lining interior with an outline traced around it
+    for (x, y) in interior:
+        rows[y][x] = PINK_DARK if rng.random() < 0.16 else PINK
+    for (x, y) in list(interior):
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if (nx, ny) in interior: continue
+            if not (0 <= nx < TRACT_W and 0 <= ny < TRACT_H): continue
+            if nx > STOMACH_X1: continue   # don't wall off the outlet
+            rows[ny][nx] = PINK_OUTLINE
+
+    # Sphincter pucker terminates the tract; nothing is drawn past it
+    for x in range(TRACT_W):
+        for y in range(TRACT_H):
+            d = math.hypot(x + 0.5 - PUCKER_CX, y + 0.5 - PUCKER_CY)
+            if d <= PUCKER_R_HOLE:
+                rows[y][x] = PUCKER_HOLE
+            elif d <= PUCKER_R_MID:
+                rows[y][x] = PINK_OUTLINE
+            elif d <= PUCKER_R_OUTER:
+                rows[y][x] = PINK_DARK
     return rows
 
 
-def intestine_fill(seed):
-    """The bore contents: speckled brown along the same path, drawn by the
-    client clipped to a width proportional to the poop bar."""
+def tract_food_fill(seed):
+    """Stomach contents only. The client reveals the BOTTOM rows of this
+    canvas (position, height and texture_v pushed together), so the amber
+    rises inside the organ the way the reference sketch shows."""
     rng = random.Random(seed)
-    rows = [[CLEAR] * INTESTINE_W for _ in range(INTESTINE_H)]
-    for x in range(INTESTINE_W):
-        c = intestine_center(x)
-        for y in range(INTESTINE_H):
-            if abs(y + 0.5 - c) <= BORE_RADIUS:
-                r = rng.random()
-                rows[y][x] = DARK if r < 0.20 else (LIGHT if r < 0.32 else BROWN)
+    rows = [[CLEAR] * TRACT_W for _ in range(TRACT_H)]
+    for (x, y) in _stomach_interior():
+        if x > STOMACH_X1: continue
+        r = rng.random()
+        rows[y][x] = AMBER_DARK if r < 0.20 else (AMBER_LIGHT if r < 0.34 else AMBER)
+    return rows
+
+
+def tract_waste_fill(seed):
+    """Tube contents only: speckled brown along the bore, revealed left to
+    right by the client's width clip so waste advances toward the exit."""
+    rng = random.Random(seed)
+    rows = [[CLEAR] * TRACT_W for _ in range(TRACT_H)]
+    for (x, y) in _tube_bore():
+        r = rng.random()
+        rows[y][x] = DARK if r < 0.20 else (LIGHT if r < 0.32 else BROWN)
     return rows
 
 
@@ -222,5 +338,6 @@ write_png(os.path.join(OUT, "textures/block/bat_box_front.png"), bat_box_front(1
 
 write_png(os.path.join(OUT, "textures/entity/poopsmith_gloves.png"), poopsmith_gloves(seed=8117))
 
-write_png(os.path.join(OUT, "textures/gui/poop_intestine.png"), intestine_tube(seed=5233))
-write_png(os.path.join(OUT, "textures/gui/poop_intestine_fill.png"), intestine_fill(seed=5233))
+write_png(os.path.join(OUT, "textures/gui/poop_tract.png"), tract_walls(seed=5233))
+write_png(os.path.join(OUT, "textures/gui/poop_tract_food.png"), tract_food_fill(seed=6421))
+write_png(os.path.join(OUT, "textures/gui/poop_tract_waste.png"), tract_waste_fill(seed=5233))

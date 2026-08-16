@@ -35,7 +35,9 @@ public final class LatrineStructureInjector {
 	};
 
 	private static final Identifier LATRINE_STRUCTURE = Identifier.fromNamespaceAndPath(Main.MOD_ID, "latrine");
-	private static final int LATRINE_WEIGHT = 2;
+	// Weight 1: jigsaw pools have no uniqueness, so weight multiplies the odds
+	// of duplicate latrines in one village; one privy per village is the feel
+	private static final int LATRINE_WEIGHT = 1;
 
 	private LatrineStructureInjector() {}
 
@@ -51,8 +53,11 @@ public final class LatrineStructureInjector {
 
 			// RIGID matches vanilla houses: the entrance jigsaw anchors the
 			// piece at street level, and the pit in the foundation must not
-			// be warped to terrain
-			StructurePoolElement latrineElement = StructurePoolElement.legacy(
+			// be warped to terrain. `single`, NOT `legacy`: legacy elements
+			// add BlockIgnoreProcessor.STRUCTURE_AND_AIR (verified in the
+			// game jar), which skips every explicit air block, so the sunk
+			// pit shaft and the hut interior would stay filled with terrain
+			StructurePoolElement latrineElement = StructurePoolElement.single(
 				LATRINE_STRUCTURE.toString()
 			).apply(StructureTemplatePool.Projection.RIGID);
 
