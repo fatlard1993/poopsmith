@@ -18,8 +18,10 @@ import net.minecraft.world.item.Items;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Server-authoritative player poop system: the bar fills from eating (and
@@ -32,7 +34,17 @@ public final class PlayerPoopManager {
 
 	public static final int MANUAL_POOP_THRESHOLD = 20;
 
-	private static final int GAIN_PER_NUTRITION = 3;
+	/**
+	 * Waste per hunger point actually burned.
+	 *
+	 * <p>Deliberately the old per-nutrition figure: a meal restores as many hunger
+	 * points as it had nutrition, so the same food still produces the same total.
+	 * What changed is when. Eating used to fill the bar on the spot, which had a
+	 * player go from hungry to needing the toilet between one bite and the next;
+	 * now the food sits in the stomach and becomes waste as it is used, which is
+	 * what the HUD has been drawing all along.
+	 */
+	private static final int GAIN_PER_HUNGER = 3;
 	private static final int RISKY_FOOD_BONUS = 25;
 	private static final float DIARRHEA_CHANCE = 0.30F;
 	private static final int DIARRHEA_DURATION_TICKS = 1800; // 90 seconds
@@ -82,6 +94,7 @@ public final class PlayerPoopManager {
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 			DigestiveHud.syncVisibility(player, data.getLevel(player.getUUID()));
 			checkFirstNetherEntry(player, data);
+			digestSpentHunger(player);
 
 			int remaining = data.getDiarrheaTicks(player.getUUID());
 			if (remaining <= 0) continue;
@@ -115,14 +128,35 @@ public final class PlayerPoopManager {
 		if (stack.is(Main.GUANO_ITEM)) {
 			tryCureDiarrhea(player);
 		}
-		int gain = food.nutrition() * GAIN_PER_NUTRITION;
+		// The meal itself adds nothing: it goes to the stomach, which is the vanilla
+		// hunger bar, and turns into waste as that drains. Bad food is the exception,
+		// because what makes it bad is not its nutrition.
 		if (RISKY_FOODS.contains(stack.getItem())) {
-			gain += RISKY_FOOD_BONUS;
+			addLevel(player, RISKY_FOOD_BONUS);
 			if (player.getRandom().nextFloat() < DIARRHEA_CHANCE) {
 				startDiarrhea(player);
 			}
 		}
-		addLevel(player, gain);
+	}
+
+	/** Hunger last seen per player, to notice it being spent rather than restored. */
+	private static final Map<UUID, Integer> lastFoodLevel = new ConcurrentHashMap<>();
+
+	/**
+	 * Turn hunger burned since the last tick into waste.
+	 *
+	 * <p>Only drops count. Eating raises the level and must not register as
+	 * digestion, or a meal would pay twice. Saturation is ignored on purpose: it
+	 * is the buffer before hunger moves at all, so waiting for the visible bar to
+	 * fall is what makes the stomach emptying and the intestine filling read as
+	 * one motion.
+	 */
+	private static void digestSpentHunger(ServerPlayer player) {
+		int food = player.getFoodData().getFoodLevel();
+		Integer previous = lastFoodLevel.put(player.getUUID(), food);
+		if (previous == null || food >= previous) return;
+
+		addLevel(player, (previous - food) * GAIN_PER_HUNGER);
 	}
 
 	/** Guano is the folk remedy: eating it ends active diarrhea outright. */
@@ -265,6 +299,9 @@ public final class PlayerPoopManager {
 	}
 
 	public static void onPlayerDisconnect(UUID uuid) {
+		// Dropped rather than kept: a rejoining player's first tick would otherwise
+		// compare against a stale level and bill them for hunger burned last session.
+		lastFoodLevel.remove(uuid);
 		DigestiveHud.onPlayerDisconnect(uuid);
 	}
 

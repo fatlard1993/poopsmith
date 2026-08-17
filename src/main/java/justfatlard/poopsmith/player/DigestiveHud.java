@@ -108,13 +108,21 @@ public final class DigestiveHud {
 					.prop(ComponentType.PROP_TEXTURE, TEXTURE_FOOD)
 					.prop(ComponentType.PROP_TEXTURE_WIDTH, String.valueOf(TRACT_WIDTH))
 					.prop(ComponentType.PROP_TEXTURE_HEIGHT, String.valueOf(TRACT_HEIGHT))
-					.prop(ComponentType.PROP_TEXTURE_V, String.valueOf(TRACT_HEIGHT - foodHeight)))
+					.prop(ComponentType.PROP_TEXTURE_V, String.valueOf(TRACT_HEIGHT - foodHeight))
+					// Slower than the default blend on purpose. Hunger moves a point at
+					// a time and rarely, so the default window reads as a jump; at this
+					// length you see the stomach actually empty, which is the whole
+					// reason for drawing a stomach instead of drumsticks.
+					.prop(ComponentType.PROP_INTERP_TICKS, "8"))
 				.component(new ComponentBuilder(WASTE_FILL_ID, ComponentType.SPRITE)
 					.bounds(TUBE_START_X, 0, wasteFillWidth(level), TRACT_HEIGHT)
 					.prop(ComponentType.PROP_TEXTURE, TEXTURE_WASTE)
 					.prop(ComponentType.PROP_TEXTURE_WIDTH, String.valueOf(TRACT_WIDTH))
 					.prop(ComponentType.PROP_TEXTURE_HEIGHT, String.valueOf(TRACT_HEIGHT))
-					.prop(ComponentType.PROP_TEXTURE_U, String.valueOf(TUBE_START_X)))
+					.prop(ComponentType.PROP_TEXTURE_U, String.valueOf(TUBE_START_X))
+					// The intestine fills as the stomach drains, so it wants the same
+					// pacing; the two together read as one movement through the tract.
+					.prop(ComponentType.PROP_INTERP_TICKS, "8"))
 				.component(new ComponentBuilder(EXIT_ICON_ID, ComponentType.SPRITE)
 					.bounds(ICON_X, 0, 0, 0)
 					.prop(ComponentType.PROP_TEXTURE, TEXTURE_POOP_ITEM));
