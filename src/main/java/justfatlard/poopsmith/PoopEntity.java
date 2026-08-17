@@ -14,12 +14,14 @@ import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableIt
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 
 /**
  * Thrown poop with snowball physics. Hitting a player inflicts a brief
- * sick/dizzy combo (nausea + slowness); hitting anything else just splats.
+ * sick/dizzy combo (nausea + slowness); landing on a block fertilises where it
+ * lands, one layer's worth, the same as a layer decaying there.
  */
 public class PoopEntity extends ThrowableItemProjectile {
 	// Nausea's warp ramps in over 150 ticks and fades from 60 ticks before
@@ -56,6 +58,18 @@ public class PoopEntity extends ThrowableItemProjectile {
 	protected void onHit(HitResult hitResult) {
 		super.onHit(hitResult);
 		if (!(this.level() instanceof ServerLevel serverWorld)) return;
+
+		// Landing on something fertilises it, the same as a layer decaying there.
+		// A throw is one layer's worth of muck arriving all at once, so it carries
+		// one layer's worth of fertility; the alternative was a splat that did
+		// nothing, which made throwing it purely a prank.
+		//
+		// The face is offset into so the target matches what fertilizeAround
+		// expects: the position the muck now occupies, whose block below is the
+		// ground it landed on.
+		if (hitResult.getType() == HitResult.Type.BLOCK && hitResult instanceof BlockHitResult blockHit) {
+			PoopPlacement.fertilizeAround(serverWorld, blockHit.getBlockPos().relative(blockHit.getDirection()));
+		}
 
 		for (int i = 0; i < 8; i++) {
 			serverWorld.sendParticles(
