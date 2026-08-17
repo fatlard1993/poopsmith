@@ -206,6 +206,11 @@ public class Main implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+      // Guarded class load: the tip registration names block-tip types.
+      if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("block-tip")) {
+         justfatlard.poopsmith.integration.BatBoxTipRegistration.register();
+      }
+
 		PandoricalApi.content().registerBlock(MOD_ID + ":poop_layer", new BlockRegistration()
 			.baseBlock("minecraft:snow")
 			.model(MOD_ID + ":block/poop_height2"));

@@ -94,6 +94,16 @@ public class BatBoxBlockEntity extends BlockEntity {
 		return true;
 	}
 
+	/** How much guano is waiting, for anything that wants to report it. */
+	public int stored() {
+		return this.stored;
+	}
+
+	/** False when the box will never fill: bats want water in range. */
+	public boolean hasWaterNearby() {
+		return this.waterNearby;
+	}
+
 	public int comparatorSignal() {
 		return stored == 0 ? 0 : 1 + stored * 14 / MAX_STORED;
 	}

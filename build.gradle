@@ -13,6 +13,11 @@ repositories {
 }
 
 dependencies {
+	// Optional: block-tip integration (compile-only, not bundled at runtime)
+	if (file("../block-tip/build/libs/block-tip-1.0.0.jar").exists()) {
+		compileOnly files("../block-tip/build/libs/block-tip-1.0.0.jar")
+	}
+
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
