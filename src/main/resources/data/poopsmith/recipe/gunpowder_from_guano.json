@@ -3,10 +3,14 @@
   "category": "misc",
   "ingredients": [
     "poopsmith:guano",
-    "minecraft:charcoal"
+    "minecraft:charcoal",
+    [
+      "minecraft:sulfur",
+      "minecraft:potent_sulfur"
+    ]
   ],
   "result": {
-    "count": 3,
+    "count": 5,
     "id": "minecraft:gunpowder"
   }
 }
