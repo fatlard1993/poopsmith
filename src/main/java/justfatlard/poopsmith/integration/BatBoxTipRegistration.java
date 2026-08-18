@@ -26,13 +26,13 @@ public final class BatBoxTipRegistration {
 			BlockEntity blockEntity = level.getBlockEntity(pos);
 			if (!(blockEntity instanceof BatBoxBlockEntity box)) return null;
 
-			if (!box.hasWaterNearby()) return "No water in range - bats will not settle";
+			if (!box.hasWaterNearby()) return "No water in range";
 
 			int stored = box.stored();
-			if (stored <= 0) return "Empty - bats are working on it";
-			if (stored >= BatBoxBlockEntity.MAX_STORED) return "Full - guano ready";
+			if (stored <= 0) return "Empty";
+			if (stored >= BatBoxBlockEntity.MAX_STORED) return "Full";
 
-			return "Guano " + stored + " of " + BatBoxBlockEntity.MAX_STORED;
+			return "Guano " + stored + "/" + BatBoxBlockEntity.MAX_STORED;
 		});
 	}
 }
