@@ -19,8 +19,8 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Snow-layer-alike: 1-8 stackable layers with snow-parity shapes, placement,
- * and support rules. Instead of melting, layers slowly decay into fertility:
+ * Snow-layer-alike: 1-8 stackable layers with snow placement and support
+ * rules. Instead of melting, layers slowly decay into fertility:
  * each decay tick removes one layer and applies vanilla bonemeal growth nearby.
  */
 public class PoopLayerBlock extends Block {
@@ -31,11 +31,18 @@ public class PoopLayerBlock extends Block {
 	// lifetime of a single layer around 45 real minutes (roughly 2 day cycles)
 	private static final int DECAY_CHANCE = 40;
 
+	// Two pixels per layer, snow parity, except the first two: those render as
+	// chunky piles (see generate_models.py) rather than flat sheets, and their
+	// boxes match the pile peaks so the outline sits on the model instead of
+	// sinking into it. A loose heap peaks at the same 6 pixels the third layer
+	// packs down to, which is where stacking takes walls anyway.
+	private static final int[] HEIGHTS = {0, 4, 6, 6, 8, 10, 12, 14, 16};
+
 	private static final VoxelShape[] SHAPES = new VoxelShape[MAX_LAYERS + 1];
 	static {
 		SHAPES[0] = Shapes.empty();
 		for (int i = 1; i <= MAX_LAYERS; i++) {
-			SHAPES[i] = Block.box(0.0D, 0.0D, 0.0D, 16.0D, i * 2.0D, 16.0D);
+			SHAPES[i] = Block.box(0.0D, 0.0D, 0.0D, 16.0D, HEIGHTS[i], 16.0D);
 		}
 	}
 

@@ -8,19 +8,39 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
  * Shared poop-deposit logic for animals, llamas, and players.
  * Natural accumulation caps at {@link #NATURAL_MAX_LAYERS} (7): the world
  * never fills a full-height stack on its own; only hand-placement reaches 8.
+ * On open ground it stops far lower, at {@link #OPEN_STACK_LAYERS}: a heap
+ * with nothing holding it in slides sideways rather than growing a tower.
  */
 public final class PoopPlacement {
 	private PoopPlacement() {}
 
 	public static final int NATURAL_MAX_LAYERS = 7;
+
+	/**
+	 * Layers a stack reaches on open ground before further deposits slide off
+	 * it. Two is what a loose heap holds: past that it wants walls, which is
+	 * what makes a latrine pit (or any fenced corner) worth building.
+	 */
+	public static final int OPEN_STACK_LAYERS = 2;
+
+	/**
+	 * How far a sliding deposit looks for somewhere lower. One ring is the
+	 * eight tiles it could plausibly roll onto; the second catches a busy spot
+	 * (a llama's communal pile) already covered to the first ring's edge.
+	 */
+	private static final int SLIDE_RADIUS = 2;
 
 	/** Horizontal radius llamas scan for an existing communal poop spot. */
 	public static final int LLAMA_SEARCH_RADIUS = 16;
@@ -41,19 +61,53 @@ public final class PoopPlacement {
 	/** Same rules, any layer block: poop for animals/players, guano for bats. */
 	public static Optional<BlockPos> deposit(ServerLevel world, BlockPos origin, PoopLayerBlock layerBlock) {
 		if (tryDepositAt(world, origin, layerBlock)) return Optional.of(origin);
-		// Full stack (or blocked) at the origin: spread to an adjacent tile.
-		// Shuffled so piles grow outward organically instead of always north-first.
-		for (Direction direction : Direction.Plane.HORIZONTAL.shuffledCopy(world.getRandom())) {
-			BlockPos side = origin.relative(direction);
-			if (tryDepositAt(world, side, layerBlock)) return Optional.of(side);
+		// Capped, blocked, or slid off the origin: spread outward, nearest ring
+		// first, each ring shuffled so piles grow organically rather than
+		// always north-first.
+		for (int radius = 1; radius <= SLIDE_RADIUS; radius++) {
+			for (BlockPos pos : shuffledRing(origin, radius, world.getRandom())) {
+				if (tryDepositAt(world, pos, layerBlock)) return Optional.of(pos);
+			}
 		}
+		// Nowhere left to slide: the whole yard is covered, so the origin takes
+		// it after all (up to the natural cap). Better a tall pile than a
+		// deposit that silently evaporates.
+		if (tryDepositAt(world, origin, layerBlock, true)) return Optional.of(origin);
 		return Optional.empty();
 	}
 
+	/** The hollow square exactly {@code radius} tiles out, same level, in random order. */
+	private static List<BlockPos> shuffledRing(BlockPos center, int radius, RandomSource random) {
+		List<BlockPos> positions = new ArrayList<>();
+		for (int dx = -radius; dx <= radius; dx++) {
+			for (int dz = -radius; dz <= radius; dz++) {
+				if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+				positions.add(center.offset(dx, 0, dz));
+			}
+		}
+		for (int i = positions.size() - 1; i > 0; i--) {
+			Collections.swap(positions, i, random.nextInt(i + 1));
+		}
+		return positions;
+	}
+
 	private static boolean tryDepositAt(ServerLevel world, BlockPos pos, PoopLayerBlock layerBlock) {
+		return tryDepositAt(world, pos, layerBlock, false);
+	}
+
+	/**
+	 * One deposit at one position. {@code forceStack} skips the open-ground
+	 * slide rule: only the last-resort path in {@link #deposit} sets it, once
+	 * every tile in slide range has been tried.
+	 */
+	private static boolean tryDepositAt(ServerLevel world, BlockPos pos, PoopLayerBlock layerBlock, boolean forceStack) {
 		BlockState state = world.getBlockState(pos);
 		if (state.is(layerBlock)) {
 			int layers = state.getValue(PoopLayerBlock.LAYERS);
+			if (layers >= OPEN_STACK_LAYERS && !forceStack && !isContained(world, pos, layerBlock)) {
+				// Loose heap at its resting height: this one slides off
+				return false;
+			}
 			if (layers >= NATURAL_MAX_LAYERS) {
 				// Compost-pit rule: a capped stack supported by a poop block
 				// converts to a full poop block instead of refusing (7 layers
@@ -74,6 +128,29 @@ public final class PoopPlacement {
 		if (!layer.canSurvive(world, pos)) return false;
 		world.setBlockAndUpdate(pos, layer);
 		return true;
+	}
+
+	/**
+	 * Whether a stack here may grow past {@link #OPEN_STACK_LAYERS}. Two things
+	 * hold a heap together: walls on all four sides (a latrine pit, a fenced
+	 * corner, a hole you dug), and its own solid block underneath, which is a
+	 * compost column packing down rather than a pile spreading out. The second
+	 * is what keeps a placed poop block working as a compost seed anywhere.
+	 */
+	private static boolean isContained(ServerLevel world, BlockPos pos, PoopLayerBlock layerBlock) {
+		if (world.getBlockState(pos.below()).is(compostBase(layerBlock))) return true;
+		for (Direction direction : Direction.Plane.HORIZONTAL) {
+			BlockPos side = pos.relative(direction);
+			if (!world.getBlockState(side).isFaceSturdy(world, side, direction.getOpposite())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** The full block a layer stack of this kind composts into and rises on. */
+	private static Block compostBase(PoopLayerBlock layerBlock) {
+		return layerBlock == Main.POOP_LAYER_BLOCK ? Main.POOP_BLOCK : Main.GUANO_BLOCK;
 	}
 
 	/**
@@ -124,7 +201,8 @@ public final class PoopPlacement {
 	 * ground use: deposit at {@code origin} or the first spot below it that
 	 * takes a layer, stopping at any solid obstruction. Lets a player at a
 	 * latrine pit's edge drop into the pit (where a capped stack on a poop
-	 * block converts via the compost-pit rule inside tryDepositAt). Empty when
+	 * block converts via the compost-pit rule inside tryDepositAt), and lets a
+	 * heap that has stopped stacking slide aside where it sits. Empty when
 	 * nothing within {@code maxDrop} could take the layer; callers fall back.
 	 */
 	public static Optional<BlockPos> depositWithDrop(ServerLevel world, BlockPos origin, int maxDrop) {
@@ -132,7 +210,13 @@ public final class PoopPlacement {
 			BlockPos pos = origin.below(dy);
 			if (tryDepositAt(world, pos, Main.POOP_LAYER_BLOCK)) return Optional.of(pos);
 			BlockState state = world.getBlockState(pos);
-			if (!state.isAir() && !state.canBeReplaced() && !state.is(Main.POOP_LAYER_BLOCK)) {
+			if (state.is(Main.POOP_LAYER_BLOCK)) {
+				// Aimed at a heap that has stopped taking layers: let it slide
+				// aside down there rather than bouncing the whole deposit back
+				// to the aimer's own feet
+				return deposit(world, pos, Main.POOP_LAYER_BLOCK);
+			}
+			if (!state.isAir() && !state.canBeReplaced()) {
 				return Optional.empty();
 			}
 		}

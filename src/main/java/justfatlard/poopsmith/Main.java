@@ -213,7 +213,7 @@ public class Main implements ModInitializer {
 
 		PandoricalApi.content().registerBlock(MOD_ID + ":poop_layer", new BlockRegistration()
 			.baseBlock("minecraft:snow")
-			.model(MOD_ID + ":block/poop_height2"));
+			.model(MOD_ID + ":block/poop_pile1"));
 		PandoricalApi.content().registerBlock(MOD_ID + ":poop_block", new BlockRegistration()
 			.baseBlock("minecraft:mud")
 			.model(MOD_ID + ":block/poop_block"));
@@ -225,7 +225,7 @@ public class Main implements ModInitializer {
 			.model(MOD_ID + ":item/poop_block"));
 		PandoricalApi.content().registerBlock(MOD_ID + ":guano_layer", new BlockRegistration()
 			.baseBlock("minecraft:snow")
-			.model(MOD_ID + ":block/guano_height2"));
+			.model(MOD_ID + ":block/guano_pile1"));
 		PandoricalApi.content().registerBlock(MOD_ID + ":guano_block", new BlockRegistration()
 			.baseBlock("minecraft:sand")
 			.model(MOD_ID + ":block/guano_block"));
@@ -317,6 +317,7 @@ public class Main implements ModInitializer {
 		// references village-quests types directly (compileOnly)
 		if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("village-quests-justfatlard")) {
 			justfatlard.poopsmith.integration.LatrineQuestRegistration.register();
+			justfatlard.poopsmith.integration.BatBoxDialogue.register();
 		}
 
 		LOGGER.info("Loaded poopsmith (server-side with Pandorical)");

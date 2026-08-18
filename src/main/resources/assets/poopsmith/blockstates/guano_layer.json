@@ -1,10 +1,10 @@
 {
   "variants": {
     "layers=1": {
-      "model": "poopsmith:block/guano_height2"
+      "model": "poopsmith:block/guano_pile1"
     },
     "layers=2": {
-      "model": "poopsmith:block/guano_height4"
+      "model": "poopsmith:block/guano_pile2"
     },
     "layers=3": {
       "model": "poopsmith:block/guano_height6"
