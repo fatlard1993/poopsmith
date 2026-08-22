@@ -4,6 +4,7 @@ import justfatlard.pandorical.api.BlockRegistration;
 import justfatlard.pandorical.api.ItemRegistration;
 import justfatlard.pandorical.api.PandoricalApi;
 import justfatlard.poopsmith.integration.VillageBuilderIntegration;
+import justfatlard.poopsmith.player.BedAccident;
 import justfatlard.poopsmith.player.PlayerPoopManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
@@ -93,7 +94,8 @@ public class Main implements ModInitializer {
 			.strength(0.2F)
 			.sound(SoundType.MUD)
 			.randomTicks()
-			.setId(POOP_LAYER_BLOCK_KEY)
+			.setId(POOP_LAYER_BLOCK_KEY),
+		PoopLayerBlock.PILE_HEIGHTS
 	);
 
 	public static final Block POOP_BLOCK = new Block(
@@ -122,7 +124,7 @@ public class Main implements ModInitializer {
 			.cookingFuel(FUEL_POOP_KEY)
 	);
 
-	public static final BlockItem POOP_LAYER_ITEM = new BlockItem(
+	public static final PoopLayerItem POOP_LAYER_ITEM = new PoopLayerItem(
 		POOP_LAYER_BLOCK,
 		new Item.Properties()
 			.setId(POOP_LAYER_ITEM_KEY)
@@ -145,7 +147,8 @@ public class Main implements ModInitializer {
 			.strength(0.2F)
 			.sound(SoundType.SNOW)
 			.randomTicks()
-			.setId(GUANO_LAYER_BLOCK_KEY)
+			.setId(GUANO_LAYER_BLOCK_KEY),
+		PoopLayerBlock.SHEET_HEIGHTS
 	);
 
 	public static final Block GUANO_BLOCK = new Block(
@@ -178,7 +181,7 @@ public class Main implements ModInitializer {
 			.cookingFuel(FUEL_GUANO_KEY)
 	);
 
-	public static final BlockItem GUANO_LAYER_ITEM = new BlockItem(
+	public static final PoopLayerItem GUANO_LAYER_ITEM = new PoopLayerItem(
 		GUANO_LAYER_BLOCK,
 		new Item.Properties()
 			.setId(GUANO_LAYER_ITEM_KEY)
@@ -209,6 +212,7 @@ public class Main implements ModInitializer {
       // Guarded class load: the tip registration names block-tip types.
       if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("block-tip")) {
          justfatlard.poopsmith.integration.BatBoxTipRegistration.register();
+         justfatlard.poopsmith.integration.PoopTipRegistration.register();
       }
 
 		PandoricalApi.content().registerBlock(MOD_ID + ":poop_layer", new BlockRegistration()
@@ -225,12 +229,13 @@ public class Main implements ModInitializer {
 			.model(MOD_ID + ":item/poop_block"));
 		PandoricalApi.content().registerBlock(MOD_ID + ":guano_layer", new BlockRegistration()
 			.baseBlock("minecraft:snow")
-			.model(MOD_ID + ":block/guano_pile1"));
+			.model(MOD_ID + ":block/guano_height2"));
 		PandoricalApi.content().registerBlock(MOD_ID + ":guano_block", new BlockRegistration()
 			.baseBlock("minecraft:sand")
 			.model(MOD_ID + ":block/guano_block"));
 		PandoricalApi.content().registerBlock(MOD_ID + ":bat_box", new BlockRegistration()
 			.baseBlock("minecraft:oak_planks")
+			.interactive()
 			.model(MOD_ID + ":block/bat_box"));
 		PandoricalApi.content().registerItem(MOD_ID + ":guano", new ItemRegistration()
 			.model(MOD_ID + ":item/guano"));
@@ -283,10 +288,14 @@ public class Main implements ModInitializer {
 			PlayerPoopManager::tryManualPoop);
 
 		ServerTickEvents.END_SERVER_TICK.register(PlayerPoopManager::onServerTick);
+		ServerTickEvents.END_SERVER_TICK.register(PoopFlies::onServerTick);
+		BedAccident.register();
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
 			PlayerPoopManager.onPlayerJoin(handler.getPlayer()));
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
-			PlayerPoopManager.onPlayerDisconnect(handler.getPlayer().getUUID()));
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+			PlayerPoopManager.onPlayerDisconnect(handler.getPlayer().getUUID());
+			PoopFlies.forget(handler.getPlayer().getUUID());
+		});
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> PlayerPoopManager.onServerStopping());
 		// The first-ever-Nether-entry scare is detected in PlayerPoopManager's
 		// per-tick loop (see checkFirstNetherEntry for why not an event)
