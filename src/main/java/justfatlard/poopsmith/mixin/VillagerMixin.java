@@ -128,7 +128,7 @@ public abstract class VillagerMixin {
 				// plant a layer underwater
 				PoopPlacement.waterPoop(world, self);
 				poopsmith$reseed(self);
-			} else if (PoopPlacement.deposit(world, target).isPresent()) {
+			} else if (PoopPlacement.deposit(world, target, self).isPresent()) {
 				PoopPlacement.playFart(world, self);
 				poopsmith$reseed(self);
 			} else {
