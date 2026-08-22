@@ -1,0 +1,25 @@
+{
+  "display": {
+    "icon": {
+      "id": "poopsmith:poop_block"
+    },
+    "title": "Muck Spreader",
+    "description": "Pack a latrine down into solid ground",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "frame": "goal"
+  },
+  "criteria": {
+    "packed": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "poopsmith:poop_block"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "poopsmith:muck"
+}

@@ -1,0 +1,24 @@
+{
+  "display": {
+    "icon": {
+      "id": "poopsmith:poop"
+    },
+    "title": "Somebody Has To",
+    "description": "Pick up after the animals",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "muck": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "poopsmith:poop"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "minecraft:husbandry/breed_an_animal"
+}
