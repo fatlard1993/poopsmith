@@ -35,6 +35,14 @@ public final class PlayerPoopManager {
 	public static final int MANUAL_POOP_THRESHOLD = 20;
 
 	/**
+	 * Full enough that there is more than one in there.
+	 *
+	 * <p>Read before {@link #settle} empties the bar, because by then the number that decides this
+	 * is gone.
+	 */
+	public static final int DOUBLE_DEUCE_LEVEL = 80;
+
+	/**
 	 * Waste per hunger point actually burned.
 	 *
 	 * <p>Deliberately the old per-nutrition figure: a meal restores as many hunger
@@ -66,7 +74,6 @@ public final class PlayerPoopManager {
 	// drop scan: stand at a latrine pit's edge facing away and go IN. Must
 	// clear the generated pit, whose depositable spot is 4 blocks below the
 	// rim a player stands on; 6 covers deeper hand-dug pits too
-	private static final int SHIFT_POOP_MAX_DROP = 6;
 
 	/** Foods that upset the gut: raw meat, rot, and suspicious edibles. */
 	private static final Set<Item> RISKY_FOODS = Set.of(
@@ -218,6 +225,7 @@ public final class PlayerPoopManager {
 	 */
 	private static void poop(ServerPlayer player, PoopLevelData data, String accidentMessageKey) {
 		ServerLevel world = (ServerLevel) player.level();
+		boolean doubleDeuce = data.getLevel(player.getUUID()) >= DOUBLE_DEUCE_LEVEL;
 
 		if (player.isInWater()) {
 			// No layer survives underwater: disperse instead (bar semantics
@@ -227,30 +235,55 @@ public final class PlayerPoopManager {
 			// Sneaking aims a voluntary poop one block behind (accidents
 			// don't aim); if nothing behind can take it, fall back to
 			// at-feet so the poop is never lost
-			net.minecraft.core.BlockPos landed = null;
-			if (accidentMessageKey == null && player.isShiftKeyDown()) {
-				landed = PoopPlacement.depositWithDrop(world,
-					player.blockPosition().relative(player.getDirection().getOpposite()),
-					SHIFT_POOP_MAX_DROP).orElse(null);
+			// Crouching aims it behind you; standing drops it where you stand. Either way it has
+			// to reach the ground to land, and the ground can be a few blocks down - off a ledge,
+			// over a pit, on a stair - so both aims fall the same distance before giving up.
+			boolean aiming = accidentMessageKey == null && player.isShiftKeyDown();
+			net.minecraft.core.BlockPos aim = aiming
+				? player.blockPosition().relative(player.getDirection().getOpposite())
+				: player.blockPosition();
+
+			net.minecraft.core.BlockPos landed =
+				PoopPlacement.depositWithDrop(world, aim, PoopPlacement.MAX_FALL, player).orElse(null);
+			if (landed == null && aiming) {
+				// Behind was a wall or a long way down: it lands at your feet rather than nowhere.
+				landed = PoopPlacement.depositWithDrop(world, player.blockPosition(),
+					PoopPlacement.MAX_FALL, player).orElse(null);
 			}
 			if (landed == null) {
-				landed = PoopPlacement.deposit(world, player.blockPosition()).orElse(null);
+				// Nothing within falling distance. It comes apart on the way down and feeds
+				// whatever it reaches instead of vanishing.
+				PoopPlacement.scatterFrom(world, aim);
 			}
 			PoopPlacement.playFart(world, player);
 			if (landed != null) {
 				recordPublicWitnesses(world, player, landed);
 			}
+
+			// The second of a double deuce goes through the same rules as the first, so it lands
+			// beside its twin rather than on top of it wherever the ground is open.
+			if (doubleDeuce) {
+				PoopPlacement.deposit(world, player.blockPosition(), player);
+			}
 		}
 
-		data.setLevel(player.getUUID(), 0);
-		FoodData foodData = player.getFoodData();
-		foodData.setFoodLevel(Math.max(0, foodData.getFoodLevel() - 1));
+		settle(player, data);
 
 		if (accidentMessageKey != null) {
 			player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, ACCIDENT_NAUSEA_TICKS, 0));
 			player.sendSystemMessage(
 				Component.translatable(accidentMessageKey).withStyle(ChatFormatting.GOLD), false);
 		}
+	}
+
+	/**
+	 * What every poop costs, wherever it landed: an empty bar and a hunger
+	 * point. Shared with the bed accident, which has no layer to place.
+	 */
+	static void settle(ServerPlayer player, PoopLevelData data) {
+		data.setLevel(player.getUUID(), 0);
+		FoodData foodData = player.getFoodData();
+		foodData.setFoodLevel(Math.max(0, foodData.getFoodLevel() - 1));
 		DigestiveHud.flush(player);
 	}
 
@@ -303,6 +336,7 @@ public final class PlayerPoopManager {
 		// compare against a stale level and bill them for hunger burned last session.
 		lastFoodLevel.remove(uuid);
 		DigestiveHud.onPlayerDisconnect(uuid);
+		BedAccident.forget(uuid);
 	}
 
 	public static void onServerStopping() {

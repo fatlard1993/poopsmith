@@ -1,10 +1,34 @@
 {
   "variants": {
-    "layers=1": {
+    "layers=1,facing=east": {
+      "model": "poopsmith:block/poop_pile1",
+      "y": 90
+    },
+    "layers=1,facing=north": {
       "model": "poopsmith:block/poop_pile1"
     },
-    "layers=2": {
+    "layers=1,facing=south": {
+      "model": "poopsmith:block/poop_pile1",
+      "y": 180
+    },
+    "layers=1,facing=west": {
+      "model": "poopsmith:block/poop_pile1",
+      "y": 270
+    },
+    "layers=2,facing=east": {
+      "model": "poopsmith:block/poop_pile2",
+      "y": 90
+    },
+    "layers=2,facing=north": {
       "model": "poopsmith:block/poop_pile2"
+    },
+    "layers=2,facing=south": {
+      "model": "poopsmith:block/poop_pile2",
+      "y": 180
+    },
+    "layers=2,facing=west": {
+      "model": "poopsmith:block/poop_pile2",
+      "y": 270
     },
     "layers=3": {
       "model": "poopsmith:block/poop_height6"

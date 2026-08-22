@@ -27,6 +27,17 @@ public class PoopLayerBlock extends Block {
 	public static final int MAX_LAYERS = 8;
 	public static final IntegerProperty LAYERS = BlockStateProperties.LAYERS;
 
+	/**
+	 * Which way the pile was left facing.
+	 *
+	 * <p>Only the loose heaps at one and two layers are modelled with a front and a back; from three
+	 * up they pack down into flat sheets where a rotation would be invisible. The property is on
+	 * every state regardless, because a blockstate variant that names no facing matches all of
+	 * them, and a pile that grows past two simply stops caring which way it was pointing.
+	 */
+	public static final net.minecraft.world.level.block.state.properties.EnumProperty<Direction> FACING =
+		BlockStateProperties.HORIZONTAL_FACING;
+
 	// 1-in-N gate on top of vanilla random ticks; N=40 puts the expected
 	// lifetime of a single layer around 45 real minutes (roughly 2 day cycles)
 	private static final int DECAY_CHANCE = 40;
@@ -36,40 +47,52 @@ public class PoopLayerBlock extends Block {
 	// boxes match the pile peaks so the outline sits on the model instead of
 	// sinking into it. A loose heap peaks at the same 6 pixels the third layer
 	// packs down to, which is where stacking takes walls anyway.
-	private static final int[] HEIGHTS = {0, 4, 6, 6, 8, 10, 12, 14, 16};
+	/** Heaps rather than sheets at the bottom, so the first two layers start taller. */
+	public static final int[] PILE_HEIGHTS = {0, 4, 6, 6, 8, 10, 12, 14, 16};
 
-	private static final VoxelShape[] SHAPES = new VoxelShape[MAX_LAYERS + 1];
-	static {
-		SHAPES[0] = Shapes.empty();
-		for (int i = 1; i <= MAX_LAYERS; i++) {
-			SHAPES[i] = Block.box(0.0D, 0.0D, 0.0D, 16.0D, HEIGHTS[i], 16.0D);
-		}
+	/** Snow parity, two pixels a layer all the way up: what guano uses. */
+	public static final int[] SHEET_HEIGHTS = {0, 2, 4, 6, 8, 10, 12, 14, 16};
+
+	private final int[] heights;
+	private final VoxelShape[] shapes = new VoxelShape[MAX_LAYERS + 1];
+
+	/** Top face of the pile, in blocks: where anything sitting on it rests. */
+	public static double topOf(BlockState state) {
+		PoopLayerBlock block = (PoopLayerBlock) state.getBlock();
+		return block.heights[state.getValue(LAYERS)] / 16.0D;
 	}
 
-	public PoopLayerBlock(Properties properties) {
+	public PoopLayerBlock(Properties properties, int[] heights) {
 		super(properties);
-		this.registerDefaultState(this.getStateDefinition().any().setValue(LAYERS, 1));
+		this.heights = heights;
+		shapes[0] = Shapes.empty();
+		for (int i = 1; i <= MAX_LAYERS; i++) {
+			shapes[i] = Block.box(0.0D, 0.0D, 0.0D, 16.0D, heights[i], 16.0D);
+		}
+		this.registerDefaultState(this.getStateDefinition().any()
+			.setValue(LAYERS, 1)
+			.setValue(FACING, Direction.NORTH));
 	}
 
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-		return SHAPES[state.getValue(LAYERS)];
+		return shapes[state.getValue(LAYERS)];
 	}
 
 	@Override
 	protected VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
 		// Snow parity: collision is one layer shorter, so a single layer is walk-through
-		return SHAPES[state.getValue(LAYERS) - 1];
+		return shapes[state.getValue(LAYERS) - 1];
 	}
 
 	@Override
 	protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter world, BlockPos pos) {
-		return SHAPES[state.getValue(LAYERS)];
+		return shapes[state.getValue(LAYERS)];
 	}
 
 	@Override
 	protected VoxelShape getVisualShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-		return SHAPES[state.getValue(LAYERS)];
+		return shapes[state.getValue(LAYERS)];
 	}
 
 	@Override
@@ -129,6 +152,6 @@ public class PoopLayerBlock extends Block {
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(LAYERS);
+		builder.add(LAYERS, FACING);
 	}
 }
