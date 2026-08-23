@@ -331,6 +331,35 @@ public final class PlayerPoopManager {
 		});
 	}
 
+	/**
+	 * Death empties you.
+	 *
+	 * <p>The level is kept in saved data against a UUID, which is exactly the kind of store a
+	 * death does not touch: a player who died bursting respawned still bursting, and the bar
+	 * they came back to was the one they had been trying to do something about. Nothing else
+	 * about a body survives dying, and this should not either.
+	 *
+	 * <p>Reset rather than settled: {@link #settle} also docks a hunger point and places what
+	 * was owed, and a corpse owes nothing. The respawned player just starts empty.
+	 */
+	public static void onPlayerDeath(ServerPlayer player) {
+		MinecraftServer server = player.level().getServer();
+		if (server == null) return;
+
+		PoopLevelData.get(server).setLevel(player.getUUID(), 0);
+		lastFoodLevel.remove(player.getUUID());
+		BedAccident.forget(player.getUUID());
+	}
+
+	/** Push the emptied bar once the respawned player's client is listening again. */
+	public static void onPlayerRespawn(ServerPlayer player) {
+		scheduleDelayed(20, () -> {
+			MinecraftServer server = player.level().getServer();
+			if (server == null || player.hasDisconnected()) return;
+			DigestiveHud.showOrUpdate(player, PoopLevelData.get(server).getLevel(player.getUUID()));
+		});
+	}
+
 	public static void onPlayerDisconnect(UUID uuid) {
 		// Dropped rather than kept: a rejoining player's first tick would otherwise
 		// compare against a stale level and bill them for hunger burned last session.

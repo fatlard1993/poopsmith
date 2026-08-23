@@ -292,6 +292,19 @@ public class Main implements ModInitializer {
 		BedAccident.register();
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
 			PlayerPoopManager.onPlayerJoin(handler.getPlayer()));
+		// Dying empties the bar, and the respawned player is told so once their client is
+		// listening again. Two events because the death and the new body are two moments.
+		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.AFTER_DEATH.register(
+			(entity, source) -> {
+				if (entity instanceof net.minecraft.server.level.ServerPlayer dead) {
+					PlayerPoopManager.onPlayerDeath(dead);
+				}
+			});
+		net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register(
+			(oldPlayer, newPlayer, alive) -> {
+				if (!alive) PlayerPoopManager.onPlayerRespawn(newPlayer);
+			});
+
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			PlayerPoopManager.onPlayerDisconnect(handler.getPlayer().getUUID());
 			PoopFlies.forget(handler.getPlayer().getUUID());
