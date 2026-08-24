@@ -91,7 +91,13 @@ public class Main implements ModInitializer {
 	public static final PoopLayerBlock POOP_LAYER_BLOCK = new PoopLayerBlock(
 		BlockBehaviour.Properties.ofFullCopy(Blocks.SNOW)
 			.mapColor(MapColor.COLOR_BROWN)
-			.strength(0.2F)
+			// Snow's own 0.1, not a number of our own. The client's stand-in for a synced block is
+			// built from the base block named at registration - Blocks.SNOW for both layers - so a
+			// strength that disagrees with it means the client finishes the break at half the
+			// server's progress, the server puts the block back, and the dig restarts: the pile
+			// animates, breaks, drops nothing and comes straight back. The full blocks were fine
+			// because 0.5 is exactly what mud and sand already weigh.
+			.strength(0.1F)
 			.sound(SoundType.MUD)
 			.randomTicks()
 			.setId(POOP_LAYER_BLOCK_KEY),
@@ -144,7 +150,13 @@ public class Main implements ModInitializer {
 	public static final PoopLayerBlock GUANO_LAYER_BLOCK = new PoopLayerBlock(
 		BlockBehaviour.Properties.ofFullCopy(Blocks.SNOW)
 			.mapColor(MapColor.COLOR_LIGHT_GRAY)
-			.strength(0.2F)
+			// Snow's own 0.1, not a number of our own. The client's stand-in for a synced block is
+			// built from the base block named at registration - Blocks.SNOW for both layers - so a
+			// strength that disagrees with it means the client finishes the break at half the
+			// server's progress, the server puts the block back, and the dig restarts: the pile
+			// animates, breaks, drops nothing and comes straight back. The full blocks were fine
+			// because 0.5 is exactly what mud and sand already weigh.
+			.strength(0.1F)
 			.sound(SoundType.SNOW)
 			.randomTicks()
 			.setId(GUANO_LAYER_BLOCK_KEY),
