@@ -81,6 +81,9 @@ public final class DigestiveHud {
 	/** Last food level pushed, so the per-tick reconcile only sends on change. */
 	private static final Map<UUID, Integer> lastFood = new ConcurrentHashMap<>();
 
+	/** Whether the tract was last drawn a row up for a mount. */
+	private static final Map<UUID, Boolean> ridingLast = new ConcurrentHashMap<>();
+
 	/** Push the tract (first time) or its new fill widths to a capable player. */
 	public static void showOrUpdate(ServerPlayer player, int level) {
 		if (!PandoricalApi.isAvailable(player) || !PandoricalApi.hasCapability(player, "hud")) return;
@@ -99,7 +102,7 @@ public final class DigestiveHud {
 				// Without suppression the drumsticks still own the hunger row, so the
 				// tract moves one row up into the air-bubble band: it overlaps bubbles
 				// while swimming, which is the lesser of the two collisions.
-				.offset(LEFT_EDGE_FROM_CENTER, canReplaceFoodBar ? BOTTOM_MARGIN : BOTTOM_MARGIN + TRACT_HEIGHT)
+				.offset(LEFT_EDGE_FROM_CENTER, rowFor(player, canReplaceFoodBar))
 				.component(new ComponentBuilder(TRACT_ID, ComponentType.SPRITE)
 					.bounds(0, 0, TRACT_WIDTH, TRACT_HEIGHT)
 					.prop(ComponentType.PROP_TEXTURE, TEXTURE_TRACT))
@@ -210,6 +213,18 @@ public final class DigestiveHud {
 			showOrUpdate(player, level);
 			return;
 		}
+		// The row is chosen when the overlay is built and cannot be nudged afterwards, so getting
+		// on or off a horse means building it again.
+		boolean ridingNow = riding(player);
+		if (!Boolean.valueOf(ridingNow).equals(ridingLast.get(uuid))) {
+			ridingLast.put(uuid, ridingNow);
+			if (shownNow) {
+				hide(player);
+				showOrUpdate(player, level);
+				return;
+			}
+		}
+
 		int food = player.getFoodData().getFoodLevel();
 		Integer previous = lastFood.get(uuid);
 		if (previous != null && previous == food) return;
@@ -226,6 +241,28 @@ public final class DigestiveHud {
 		if (replacingFoodBar.remove(uuid)) {
 			PandoricalApi.hud().restoreVanillaElements(player, OWNER_ID);
 		}
+	}
+
+	/**
+	 * Which row the tract sits on.
+	 *
+	 * <p>Two things can take the hunger row away. Without element suppression the drumsticks keep
+	 * it, and riding anything alive hands it to the mount's hearts - a horse, a camel, a strider,
+	 * a saddled pig. Either one pushes the tract up by its own height; both together push it twice,
+	 * because the row above is occupied in exactly the same way.
+	 *
+	 * <p>A boat or a minecart is not alive and has no hearts to draw, so those are left alone.
+	 */
+	private static int rowFor(ServerPlayer player, boolean canReplaceFoodBar) {
+		int row = BOTTOM_MARGIN;
+		if (!canReplaceFoodBar) row += TRACT_HEIGHT;
+		if (riding(player)) row += TRACT_HEIGHT;
+		return row;
+	}
+
+	/** Riding something that draws its own health where the hunger bar goes. */
+	private static boolean riding(ServerPlayer player) {
+		return player.getVehicle() instanceof net.minecraft.world.entity.LivingEntity;
 	}
 
 	private static boolean stillShown(ServerPlayer player) {
@@ -246,5 +283,6 @@ public final class DigestiveHud {
 		shown.remove(uuid);
 		replacingFoodBar.remove(uuid);
 		lastFood.remove(uuid);
+		ridingLast.remove(uuid);
 	}
 }
