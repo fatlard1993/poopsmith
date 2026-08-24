@@ -108,10 +108,23 @@ public class PoopLayerBlock extends Block {
 		return true;
 	}
 
+	/**
+	 * Ground that holds a pile despite not being a full cube.
+	 *
+	 * <p>{@code isFaceFull} asks for a top face flush with the block above, and a dirt path is a
+	 * pixel short of one - so a cow standing on a village path left nothing behind, which is most
+	 * of the ground a village has. Vanilla answers the same question for snow with
+	 * {@code support_override_snow_layer}; this is that list, for piles.
+	 */
+	public static final net.minecraft.tags.TagKey<Block> SUPPORTS_A_PILE =
+		net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BLOCK,
+			net.minecraft.resources.Identifier.fromNamespaceAndPath(Main.MOD_ID, "supports_a_pile"));
+
 	@Override
 	protected boolean canSurvive(BlockState state, LevelReader world, BlockPos pos) {
 		BlockState below = world.getBlockState(pos.below());
-		return Block.isFaceFull(below.getBlockSupportShape(world, pos.below()), Direction.UP)
+		return below.is(SUPPORTS_A_PILE)
+			|| Block.isFaceFull(below.getBlockSupportShape(world, pos.below()), Direction.UP)
 			|| (below.is(this) && below.getValue(LAYERS) == MAX_LAYERS);
 	}
 
