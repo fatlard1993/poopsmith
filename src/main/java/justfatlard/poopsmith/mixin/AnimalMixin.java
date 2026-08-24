@@ -38,7 +38,8 @@ public abstract class AnimalMixin implements PoopUrge {
 		if (!(self.level() instanceof ServerLevel serverWorld)) return;
 
 		if (poopsmith$poopTimer == Integer.MIN_VALUE) {
-			poopsmith$poopTimer = 1 + self.getRandom().nextInt(FULL_DAY_TICKS);
+			poopsmith$poopTimer = 1 + self.getRandom().nextInt(Math.max(1,
+				Math.round(FULL_DAY_TICKS * justfatlard.poopsmith.AnimalSize.intervalScale(self))));
 		}
 		if (--poopsmith$poopTimer > 0) return;
 
@@ -58,10 +59,25 @@ public abstract class AnimalMixin implements PoopUrge {
 		}
 
 		if (self.onGround() && PoopPlacement.animalPoop(serverWorld, self)) {
-			poopsmith$poopTimer = RESEED_BASE_TICKS + self.getRandom().nextInt(RESEED_JITTER_TICKS);
+			poopsmith$poopTimer = poopsmith$reseed(self);
 		} else {
 			poopsmith$poopTimer = RETRY_TICKS;
 		}
+	}
+
+	/**
+	 * How long until this one goes again, scaled by how big it is.
+	 *
+	 * <p>The jitter scales with the wait rather than staying fixed, so a herd does not drift into
+	 * step: shrinking the gap while leaving the spread alone would make a field of camels beat
+	 * out the same rhythm.
+	 */
+	@Unique
+	private int poopsmith$reseed(Animal self) {
+		float scale = justfatlard.poopsmith.AnimalSize.intervalScale(self);
+		int base = Math.max(1, Math.round(RESEED_BASE_TICKS * scale));
+		int jitter = Math.max(1, Math.round(RESEED_JITTER_TICKS * scale));
+		return base + self.getRandom().nextInt(jitter);
 	}
 
 	@Override
@@ -78,6 +94,6 @@ public abstract class AnimalMixin implements PoopUrge {
 	public void poopsmith$onPooped() {
 		Animal self = (Animal) (Object) this;
 		poopsmith$needsPoop = false;
-		poopsmith$poopTimer = RESEED_BASE_TICKS + self.getRandom().nextInt(RESEED_JITTER_TICKS);
+		poopsmith$poopTimer = poopsmith$reseed(self);
 	}
 }

@@ -376,12 +376,16 @@ public final class PoopPlacement {
 		if (animal.isInWater()) {
 			return waterPoop(world, animal);
 		}
-		Optional<BlockPos> placed = deposit(world, animal.blockPosition(), animal);
-		if (placed.isPresent()) {
-			playFart(world, animal);
-			return true;
+		// A second helping for the biggest of them, laid by the same rules as the first: it
+		// stacks onto what just landed, or spreads to the next square if that pile is full.
+		int helpings = AnimalSize.layers(animal);
+		boolean any = false;
+		for (int i = 0; i < helpings; i++) {
+			if (deposit(world, animal.blockPosition(), animal).isPresent()) any = true;
 		}
-		return false;
+
+		if (any) playFart(world, animal);
+		return any;
 	}
 
 	/**
