@@ -81,8 +81,16 @@ public class PoopLayerBlock extends Block {
 
 	@Override
 	protected VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-		// Snow parity: collision is one layer shorter, so a single layer is walk-through
-		return shapes[state.getValue(LAYERS) - 1];
+		// Nothing to stand on, at any depth. Snow parity gave the deeper piles a collision box one
+		// layer short of the model, which meant a pen that had not been mucked out slowly grew a
+		// step: the animals walked up their own leavings and over the fence.
+		//
+		// It also settles a disagreement with the client. Pandorical builds the client's stand-in
+		// from the first state alone and reads its collision as the whole block's - see
+		// DynamicBlock.declaresCollision - and the first state here is layers=1, which was already
+		// empty. So the client has always treated every pile as walk-through while the server held
+		// eight of them solid. Empty everywhere is the answer to both.
+		return Shapes.empty();
 	}
 
 	@Override
