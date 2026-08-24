@@ -14,5 +14,6 @@
   "message.poopsmith.bed_accident": "Not again...",
   "message.poopsmith.diarrhea": "Your stomach gurgles ominously...",
   "message.poopsmith.guano_cure": "Chalky, vile, and effective. Your gut settles at once.",
-  "message.poopsmith.not_ready": "You don't need to go yet"
+  "message.poopsmith.not_ready": "You don't need to go yet",
+  "enchantment.poopsmith.pooper_scooper": "Pooper Scooper"
 }

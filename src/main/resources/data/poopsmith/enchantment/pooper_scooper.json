@@ -1,0 +1,22 @@
+{
+  "description": {
+    "translate": "enchantment.poopsmith.pooper_scooper"
+  },
+  "exclusive_set": [],
+  "supported_items": "#minecraft:shovels",
+  "primary_items": "#minecraft:shovels",
+  "weight": 5,
+  "max_level": 3,
+  "min_cost": {
+    "base": 8,
+    "per_level_above_first": 9
+  },
+  "max_cost": {
+    "base": 40,
+    "per_level_above_first": 9
+  },
+  "anvil_cost": 2,
+  "slots": [
+    "mainhand"
+  ]
+}
