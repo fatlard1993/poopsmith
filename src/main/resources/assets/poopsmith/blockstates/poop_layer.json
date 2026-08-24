@@ -1,52 +1,124 @@
 {
   "variants": {
-    "layers=1,facing=east": {
-      "model": "poopsmith:block/poop_pile1",
-      "y": 90
-    },
-    "layers=1,facing=north": {
+    "facing=north,layers=1": {
       "model": "poopsmith:block/poop_pile1"
     },
-    "layers=1,facing=south": {
-      "model": "poopsmith:block/poop_pile1",
-      "y": 180
+    "facing=north,layers=2": {
+      "model": "poopsmith:block/poop_pile2"
     },
-    "layers=1,facing=west": {
-      "model": "poopsmith:block/poop_pile1",
-      "y": 270
+    "facing=north,layers=3": {
+      "model": "poopsmith:block/poop_height6"
     },
-    "layers=2,facing=east": {
+    "facing=north,layers=4": {
+      "model": "poopsmith:block/poop_height8"
+    },
+    "facing=north,layers=5": {
+      "model": "poopsmith:block/poop_height10"
+    },
+    "facing=north,layers=6": {
+      "model": "poopsmith:block/poop_height12"
+    },
+    "facing=north,layers=7": {
+      "model": "poopsmith:block/poop_height14"
+    },
+    "facing=north,layers=8": {
+      "model": "poopsmith:block/poop_block"
+    },
+    "facing=east,layers=1": {
+      "model": "poopsmith:block/poop_pile1",
+      "y": 90
+    },
+    "facing=east,layers=2": {
       "model": "poopsmith:block/poop_pile2",
       "y": 90
     },
-    "layers=2,facing=north": {
-      "model": "poopsmith:block/poop_pile2"
+    "facing=east,layers=3": {
+      "model": "poopsmith:block/poop_height6",
+      "y": 90
     },
-    "layers=2,facing=south": {
+    "facing=east,layers=4": {
+      "model": "poopsmith:block/poop_height8",
+      "y": 90
+    },
+    "facing=east,layers=5": {
+      "model": "poopsmith:block/poop_height10",
+      "y": 90
+    },
+    "facing=east,layers=6": {
+      "model": "poopsmith:block/poop_height12",
+      "y": 90
+    },
+    "facing=east,layers=7": {
+      "model": "poopsmith:block/poop_height14",
+      "y": 90
+    },
+    "facing=east,layers=8": {
+      "model": "poopsmith:block/poop_block",
+      "y": 90
+    },
+    "facing=south,layers=1": {
+      "model": "poopsmith:block/poop_pile1",
+      "y": 180
+    },
+    "facing=south,layers=2": {
       "model": "poopsmith:block/poop_pile2",
       "y": 180
     },
-    "layers=2,facing=west": {
+    "facing=south,layers=3": {
+      "model": "poopsmith:block/poop_height6",
+      "y": 180
+    },
+    "facing=south,layers=4": {
+      "model": "poopsmith:block/poop_height8",
+      "y": 180
+    },
+    "facing=south,layers=5": {
+      "model": "poopsmith:block/poop_height10",
+      "y": 180
+    },
+    "facing=south,layers=6": {
+      "model": "poopsmith:block/poop_height12",
+      "y": 180
+    },
+    "facing=south,layers=7": {
+      "model": "poopsmith:block/poop_height14",
+      "y": 180
+    },
+    "facing=south,layers=8": {
+      "model": "poopsmith:block/poop_block",
+      "y": 180
+    },
+    "facing=west,layers=1": {
+      "model": "poopsmith:block/poop_pile1",
+      "y": 270
+    },
+    "facing=west,layers=2": {
       "model": "poopsmith:block/poop_pile2",
       "y": 270
     },
-    "layers=3": {
-      "model": "poopsmith:block/poop_height6"
+    "facing=west,layers=3": {
+      "model": "poopsmith:block/poop_height6",
+      "y": 270
     },
-    "layers=4": {
-      "model": "poopsmith:block/poop_height8"
+    "facing=west,layers=4": {
+      "model": "poopsmith:block/poop_height8",
+      "y": 270
     },
-    "layers=5": {
-      "model": "poopsmith:block/poop_height10"
+    "facing=west,layers=5": {
+      "model": "poopsmith:block/poop_height10",
+      "y": 270
     },
-    "layers=6": {
-      "model": "poopsmith:block/poop_height12"
+    "facing=west,layers=6": {
+      "model": "poopsmith:block/poop_height12",
+      "y": 270
     },
-    "layers=7": {
-      "model": "poopsmith:block/poop_height14"
+    "facing=west,layers=7": {
+      "model": "poopsmith:block/poop_height14",
+      "y": 270
     },
-    "layers=8": {
-      "model": "poopsmith:block/poop_block"
+    "facing=west,layers=8": {
+      "model": "poopsmith:block/poop_block",
+      "y": 270
     }
   }
 }
