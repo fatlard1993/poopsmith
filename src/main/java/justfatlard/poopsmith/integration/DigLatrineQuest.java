@@ -7,6 +7,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
@@ -45,10 +46,29 @@ public class DigLatrineQuest extends VillagerQuest {
 		return "Dig a pit 2-3 blocks deep near the village and place a poop block at its bottom";
 	}
 
+	/**
+	 * Looked for around the villager as well as the player, because those are two different
+	 * places and the pit only has to be near one of them.
+	 *
+	 * <p>The offer snapshot was taken around the villager; this used to be taken around the
+	 * player, who is by definition standing at the villager when they hand the quest in. A pit
+	 * dug more than the scan radius from that spot - or, far easier to do by accident, more than
+	 * eight blocks below it - was simply never found, and the quest could not be completed by
+	 * anybody who had actually done it. Digging where the village needs one is the whole task, so
+	 * the village is where to go looking.
+	 */
 	@Override
 	public boolean checkCompletion(ServerPlayer player) {
 		if (!(player.level() instanceof ServerLevel world)) return false;
-		for (BlockPos pit : PoopPlacement.findLatrinePits(world, player.blockPosition())) {
+
+		if (dugSince(world, player.blockPosition())) return true;
+
+		Entity villager = world.getEntity(this.villagerUuid);
+		return villager != null && dugSince(world, villager.blockPosition());
+	}
+
+	private boolean dugSince(ServerLevel world, BlockPos around) {
+		for (BlockPos pit : PoopPlacement.findLatrinePits(world, around)) {
 			if (!pitsAtOffer.contains(pit)) return true;
 		}
 		return false;
