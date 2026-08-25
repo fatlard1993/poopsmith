@@ -22,9 +22,9 @@
 		"poopsmith.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.18.4",
-		"fabric-api": "*",
-		"minecraft": ">=26.2",
+		"fabricloader": ">=${loaderVersion}",
+		"fabric-api": "${fabricApiVersion}",
+		"minecraft": "${minecraftDependency}",
 		"java": ">=25",
 		"pandorical": "*"
 	},
