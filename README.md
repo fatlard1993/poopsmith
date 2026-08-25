@@ -34,7 +34,9 @@ Shovel is the right tool. Mining a stack by hand forces the decay instead, so th
 
 **Pooper Scooper** is a shovel enchantment of three levels, ordinary enough to turn up in an enchanting table, on a villager's trades, or in loot. Each level finds one more poop or guano in a pile than was strictly in it, so a full stack under a level III shovel comes up three richer. Somebody has to want this job.
 
-Layers slowly decay via random ticks (a layer lasts on the order of a couple of day cycles). Each decayed layer applies vanilla bonemeal growth to the ground below, or to crops planted alongside, with the green particle burst. Breaking any poop or guano block without a shovel forces the decay instead of dropping anything: one growth charge per layer, eight for a full block.
+Layers rot away on random ticks, a layer at a time, taking about half a Minecraft day each. A rotting layer feeds the ground below it - or the crops planted alongside, with the green particle burst - roughly one time in four. Breaking any poop or guano block without a shovel forces the decay instead of dropping anything: one growth charge per layer, eight for a full block.
+
+**A pile that keeps being added to keeps living.** Decay is per layer, so every fresh deposit buys the heap another layer's worth of time. Somewhere a herd stands all day gains faster than it rots and needs shovelling; ground the animals only cross now and then clears itself. Room is the other answer to muck, and the cheaper one.
 
 ## The Poop Item
 

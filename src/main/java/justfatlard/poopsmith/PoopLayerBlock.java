@@ -20,8 +20,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Snow-layer-alike: 1-8 stackable layers with snow placement and support
- * rules. Instead of melting, layers slowly decay into fertility:
- * each decay tick removes one layer and applies vanilla bonemeal growth nearby.
+ * rules. Instead of melting, layers rot away one at a time, and now and then the rotting
+ * leaves a bonemeal growth in the ground beneath.
  */
 public class PoopLayerBlock extends Block {
 	public static final int MAX_LAYERS = 8;
@@ -38,9 +38,22 @@ public class PoopLayerBlock extends Block {
 	public static final net.minecraft.world.level.block.state.properties.EnumProperty<Direction> FACING =
 		BlockStateProperties.HORIZONTAL_FACING;
 
-	// 1-in-N gate on top of vanilla random ticks; N=40 puts the expected
-	// lifetime of a single layer around 45 real minutes (roughly 2 day cycles)
-	private static final int DECAY_CHANCE = 40;
+	// 1-in-N gate on top of vanilla random ticks. A block sees a random tick about once a
+	// minute, so N is roughly the expected minutes a single layer lasts: 40 was three quarters
+	// of an hour, which meant a small pen was permanently ankle deep no matter how often
+	// anybody shovelled it. Ten is about half a Minecraft day - slow enough to be worth
+	// harvesting, fast enough that ground nobody crowds comes back on its own.
+	private static final int DECAY_CHANCE = 10;
+
+	/**
+	 * How often a decaying layer feeds the ground under it.
+	 *
+	 * <p>It used to be every time, which made any pen a fertiliser engine running whether or not
+	 * anybody tended it - and now that layers go four times as fast, every time would be four
+	 * times the bonemeal for the same animals. A quarter keeps the good turn without the ground
+	 * around a paddock growing like it has a farmer.
+	 */
+	private static final int FERTILISE_CHANCE = 4;
 
 	// Two pixels per layer, snow parity, except the first two: those render as
 	// chunky piles (see generate_models.py) rather than flat sheets, and their
@@ -168,7 +181,12 @@ public class PoopLayerBlock extends Block {
 		} else {
 			world.removeBlock(pos, false);
 		}
-		PoopPlacement.fertilizeAround(world, pos);
+
+		// Sometimes, not always. Rotting is what happens to the pile; feeding the ground is a
+		// gift it occasionally leaves behind.
+		if (random.nextInt(FERTILISE_CHANCE) == 0) {
+			PoopPlacement.fertilizeAround(world, pos);
+		}
 	}
 
 	@Override
