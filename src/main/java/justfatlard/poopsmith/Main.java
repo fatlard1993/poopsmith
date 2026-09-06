@@ -31,8 +31,8 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
-import net.minecraft.world.level.storage.loot.providers.number.ResolvableNumber;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
 import net.minecraft.core.component.DataComponents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,28 +65,35 @@ public class Main implements ModInitializer {
 	public static final ResourceKey<Item> BAT_BOX_ITEM_KEY = ResourceKey.create(Registries.ITEM, BAT_BOX_ID);
 	public static final ResourceKey<EntityType<?>> POOP_ENTITY_KEY = ResourceKey.create(Registries.ENTITY_TYPE, POOP_ID);
 
+	/** Fires at the splat of any poop that fell, with how far; "Off a Cliff" listens for 100. */
+	public static final justfatlard.poopsmith.advancement.PoopDropCriterion POOP_DROPPED =
+		net.minecraft.core.Registry.register(
+			net.minecraft.core.registries.BuiltInRegistries.TRIGGER_TYPES,
+			Identifier.fromNamespaceAndPath(MOD_ID, "poop_dropped"),
+			new justfatlard.poopsmith.advancement.PoopDropCriterion());
+
 	// Vanilla data-driven composting providers: medium ≈ moderate, medium_high ≈ high
-	private static final Compostable COMPOSTABLE_MEDIUM = new Compostable(ResolvableNumber.fromKey(
-		ResourceKey.create(Registries.NUMBER_PROVIDER, Identifier.parse("minecraft:compostable/medium"))));
-	private static final Compostable COMPOSTABLE_HIGH = new Compostable(ResolvableNumber.fromKey(
-		ResourceKey.create(Registries.NUMBER_PROVIDER, Identifier.parse("minecraft:compostable/medium_high"))));
+	private static final Compostable COMPOSTABLE_MEDIUM = new Compostable(ResolvableInt.fromKey(
+		ResourceKey.create(Registries.CONTEXT_INT_PROVIDER, Identifier.parse("minecraft:compostable/medium"))));
+	private static final Compostable COMPOSTABLE_HIGH = new Compostable(ResolvableInt.fromKey(
+		ResourceKey.create(Registries.CONTEXT_INT_PROVIDER, Identifier.parse("minecraft:compostable/medium_high"))));
 	// always_add_one is the top of the vanilla compostable ladder (a flat 1.0);
 	// no "high" provider exists in this snapshot
-	private static final ResourceKey<NumberProvider> COMPOSTABLE_ALWAYS_KEY =
-		ResourceKey.create(Registries.NUMBER_PROVIDER, Identifier.parse("minecraft:compostable/always_add_one"));
+	private static final ResourceKey<ContextIntProvider> COMPOSTABLE_ALWAYS_KEY =
+		ResourceKey.create(Registries.CONTEXT_INT_PROVIDER, Identifier.parse("minecraft:compostable/always_add_one"));
 
 	// Furnace fuel is data-driven in this snapshot: cooking-time number providers,
-	// halved in fast-cooking blocks. Ours live in data/poopsmith/number_provider/cooking/.
-	private static final ResourceKey<NumberProvider> FUEL_POOP_KEY =
-		ResourceKey.create(Registries.NUMBER_PROVIDER, Identifier.fromNamespaceAndPath(MOD_ID, "cooking/time_poop"));
-	private static final ResourceKey<NumberProvider> FUEL_POOP_BLOCK_KEY =
-		ResourceKey.create(Registries.NUMBER_PROVIDER, Identifier.fromNamespaceAndPath(MOD_ID, "cooking/time_poop_block"));
-	private static final ResourceKey<NumberProvider> FUEL_GUANO_KEY =
-		ResourceKey.create(Registries.NUMBER_PROVIDER, Identifier.fromNamespaceAndPath(MOD_ID, "cooking/time_guano"));
-	private static final ResourceKey<NumberProvider> FUEL_GUANO_BLOCK_KEY =
-		ResourceKey.create(Registries.NUMBER_PROVIDER, Identifier.fromNamespaceAndPath(MOD_ID, "cooking/time_guano_block"));
-	private static final ResourceKey<NumberProvider> FUEL_WOOD_BLOCKS_KEY =
-		ResourceKey.create(Registries.NUMBER_PROVIDER, Identifier.parse("minecraft:cooking/time_wood_blocks"));
+	// halved in fast-cooking blocks. Ours live in data/poopsmith/context_int_provider/cooking/.
+	private static final ResourceKey<ContextIntProvider> FUEL_POOP_KEY =
+		ResourceKey.create(Registries.CONTEXT_INT_PROVIDER, Identifier.fromNamespaceAndPath(MOD_ID, "cooking/time_poop"));
+	private static final ResourceKey<ContextIntProvider> FUEL_POOP_BLOCK_KEY =
+		ResourceKey.create(Registries.CONTEXT_INT_PROVIDER, Identifier.fromNamespaceAndPath(MOD_ID, "cooking/time_poop_block"));
+	private static final ResourceKey<ContextIntProvider> FUEL_GUANO_KEY =
+		ResourceKey.create(Registries.CONTEXT_INT_PROVIDER, Identifier.fromNamespaceAndPath(MOD_ID, "cooking/time_guano"));
+	private static final ResourceKey<ContextIntProvider> FUEL_GUANO_BLOCK_KEY =
+		ResourceKey.create(Registries.CONTEXT_INT_PROVIDER, Identifier.fromNamespaceAndPath(MOD_ID, "cooking/time_guano_block"));
+	private static final ResourceKey<ContextIntProvider> FUEL_WOOD_BLOCKS_KEY =
+		ResourceKey.create(Registries.CONTEXT_INT_PROVIDER, Identifier.parse("minecraft:cooking/time_wood_blocks"));
 
 	public static final PoopLayerBlock POOP_LAYER_BLOCK = new PoopLayerBlock(
 		BlockBehaviour.Properties.ofFullCopy(Blocks.SNOW)
@@ -301,6 +308,7 @@ public class Main implements ModInitializer {
 
 		ServerTickEvents.END_SERVER_TICK.register(PlayerPoopManager::onServerTick);
 		ServerTickEvents.END_SERVER_TICK.register(PoopFlies::onServerTick);
+		ServerTickEvents.END_SERVER_TICK.register(DropTheater::tick);
 		BedAccident.register();
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
 			PlayerPoopManager.onPlayerJoin(handler.getPlayer()));
@@ -352,6 +360,7 @@ public class Main implements ModInitializer {
 		if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("village-quests-justfatlard")) {
 			justfatlard.poopsmith.integration.LatrineQuestRegistration.register();
 			justfatlard.poopsmith.integration.BatBoxDialogue.register();
+			justfatlard.poopsmith.integration.StreetSweeping.register();
 		}
 
 		LOGGER.info("Loaded poopsmith (server-side with Pandorical)");

@@ -243,21 +243,58 @@ public final class PlayerPoopManager {
 				? player.blockPosition().relative(player.getDirection().getOpposite())
 				: player.blockPosition();
 
-			net.minecraft.core.BlockPos landed =
-				PoopPlacement.depositWithDrop(world, aim, PoopPlacement.MAX_FALL, player).orElse(null);
-			if (landed == null && aiming) {
-				// Behind was a wall or a long way down: it lands at your feet rather than nowhere.
-				landed = PoopPlacement.depositWithDrop(world, player.blockPosition(),
-					PoopPlacement.MAX_FALL, player).orElse(null);
+			// Aimed at a crop, it is manure: the plant gets the growth and no pile is left in
+			// the row, and a double deuce feeds the plants round it too. A crop grown out
+			// wastes it rather than getting a pile: a pile in a row is a crop gone.
+			if (PoopPlacement.manure(world, aim, doubleDeuce)) {
+				PoopPlacement.playFart(world, player);
+				recordPublicWitnesses(world, player, aim);
+				settle(player, data);
+				if (accidentMessageKey != null) {
+					player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, ACCIDENT_NAUSEA_TICKS, 0));
+					player.sendSystemMessage(
+						Component.translatable(accidentMessageKey).withStyle(ChatFormatting.GOLD), false);
+				}
+				return;
 			}
-			if (landed == null) {
-				// Nothing within falling distance. It comes apart on the way down and feeds
-				// whatever it reaches instead of vanishing.
+
+			// A player's poop falls as far as there is world to fall through: a clear column
+			// off a ledge lands at its bottom, however deep, and DropTheater plays the whole
+			// descent - whistle down, then splat, sploosh or sizzle for what it met. Scatter
+			// is only for a column that is blocked partway or ends in the void.
+			net.minecraft.core.BlockPos from = aim;
+			PoopPlacement.Landing landing =
+				PoopPlacement.depositWithDrop(world, aim, aim.getY() - world.getMinY(), player)
+					.orElse(null);
+			if (landing == null && aiming) {
+				// Behind was a wall: it lands at your feet rather than nowhere.
+				from = player.blockPosition();
+				landing = PoopPlacement.depositWithDrop(world, from,
+					from.getY() - world.getMinY(), player).orElse(null);
+			}
+			if (landing == null) {
+				// The column is blocked or bottomless. It comes apart on the way down and
+				// feeds whatever it reaches instead of vanishing.
 				PoopPlacement.scatterFrom(world, aim);
 			}
 			PoopPlacement.playFart(world, player);
-			if (landed != null) {
-				recordPublicWitnesses(world, player, landed);
+			if (landing != null) {
+				boolean theatered = justfatlard.poopsmith.DropTheater.start(world, player, from, landing);
+				if (!theatered && landing.medium() == PoopPlacement.Medium.WATER) {
+					// A shoreline poop into water at your feet: no fall to dramatize, the
+					// dispersal just happens now
+					net.minecraft.core.BlockPos pos = landing.pos();
+					PoopPlacement.waterPoopAt(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+				} else if (!theatered && landing.medium() == PoopPlacement.Medium.LAVA) {
+					// Same, into lava: one short sizzle or it vanishes without a word
+					net.minecraft.core.BlockPos pos = landing.pos();
+					world.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+						net.minecraft.sounds.SoundEvents.LAVA_EXTINGUISH,
+						net.minecraft.sounds.SoundSource.NEUTRAL, 0.5F, 1.0F);
+				}
+				if (landing.medium() == PoopPlacement.Medium.GROUND) {
+					recordPublicWitnesses(world, player, landing.pos());
+				}
 			}
 
 			// The second of a double deuce goes through the same rules as the first, so it lands

@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "id": "poopsmith:guano"
+    },
+    "title": "When Nature Calls",
+    "description": "Eat guano. Alrighty then.",
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "ate_guano": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "items": "poopsmith:guano"
+        }
+      }
+    }
+  },
+  "parent": "poopsmith:muck"
+}

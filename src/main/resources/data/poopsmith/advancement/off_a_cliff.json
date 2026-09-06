@@ -1,0 +1,21 @@
+{
+  "display": {
+    "icon": {
+      "id": "poopsmith:poop"
+    },
+    "title": "Off a Cliff",
+    "description": "Poop off a hundred-block drop",
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "off_a_cliff": {
+      "trigger": "poopsmith:poop_dropped",
+      "conditions": {
+        "min_drop": 100
+      }
+    }
+  },
+  "parent": "poopsmith:muck"
+}

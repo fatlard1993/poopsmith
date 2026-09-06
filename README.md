@@ -34,9 +34,17 @@ Shovel is the right tool. Mining a stack by hand forces the decay instead, so th
 
 **Pooper Scooper** is a shovel enchantment of three levels, ordinary enough to turn up in an enchanting table, on a villager's trades, or in loot. Each level finds one more poop or guano in a pile than was strictly in it, so a full stack under a level III shovel comes up three richer. Somebody has to want this job.
 
-Layers rot away on random ticks, a layer at a time, taking about half a Minecraft day each. A rotting layer feeds the ground below it - or the crops planted alongside, with the green particle burst - roughly one time in four. Breaking any poop or guano block without a shovel forces the decay instead of dropping anything: one growth charge per layer, eight for a full block.
+An animal standing in a crop when it goes leaves no pile: the crop gets a bonemeal's growth on the spot, and a big animal's double helping feeds the plants round it too, so a pen fenced over a field grows the field. Layers rot away on random ticks, a layer at a time, taking about half a Minecraft day each. A rotting layer feeds the ground below it - or the crops planted alongside, with the green particle burst - roughly one time in four. Breaking any poop or guano block without a shovel forces the decay instead of dropping anything: one growth charge per layer, eight for a full block.
 
 **A pile that keeps being added to keeps living.** Decay is per layer, so every fresh deposit buys the heap another layer's worth of time. Somewhere a herd stands all day gains faster than it rots and needs shovelling; ground the animals only cross now and then clears itself. Room is the other answer to muck, and the cheaper one.
+
+## Off A Ledge
+
+A poop dropped over an edge falls as far as there is world to fall through, with a descending
+whistle for exactly as long as the fall and then the landing: a splat on ground, a sploosh into
+water, a sizzle into lava. The splat's echo back up to you gets fainter the longer the drop,
+because a hundred blocks down is barely audible, and that distance is the joke. A hundred-block
+drop earns the **Off a Cliff** advancement.
 
 ## The Poop Item
 
@@ -48,13 +56,13 @@ The poop item throws like a snowball. Hitting a player inflicts brief nausea and
 
 ## The Digestive Tract
 
-Eating fills a persistent 0-100 bar proportionally to nutrition, with a hefty bonus (and a ~30% diarrhea risk) for raw meat, rotten flesh, and suspicious foods. Diarrhea fills the bar rapidly for ~90 seconds under Hunger + Nausea, and persists through relogging. The bar renders as a digestive tract that takes over the vanilla hunger bar's exact rectangle and no more: a stomach at the left filling with amber as you eat, its outlet feeding a pink intestine that squiggles rightward and fills with brown as you don't poop, and a sphincter at the end that a poop icon briefly pops out of when you do. Clients whose Pandorical build can suppress vanilla HUD elements get it in place of the drumsticks; older ones keep the drumsticks and get the tract one row higher. Poop voluntarily with a keybind (default `G`, rebindable in the controls screen under the Pandorical category, bar >= 20) or involuntarily at 100. Either way: a layer at your feet, a fart, a hunger point, and a reset bar. Sneak while pooping to aim it one block behind you, dropping into whatever is down there, which is exactly how you use a latrine pit with dignity. Also: your first ever step into the Nether carries a 50% chance of an immediate accident, rolled exactly once per player, regardless of how empty you thought you were.
+Eating fills a persistent 0-100 bar proportionally to nutrition, with a hefty bonus (and a ~30% diarrhea risk) for raw meat, rotten flesh, and suspicious foods. Diarrhea fills the bar rapidly for ~90 seconds under Hunger + Nausea, and persists through relogging. The bar renders as a digestive tract that takes over the vanilla hunger bar's exact rectangle and no more: a stomach at the left filling with amber as you eat, its outlet feeding a pink intestine that squiggles rightward and fills with brown as you don't poop, and a sphincter at the end that a poop icon briefly pops out of when you do. Clients whose Pandorical build can suppress vanilla HUD elements get it in place of the drumsticks; older ones keep the drumsticks and get the tract one row higher. Poop voluntarily with a keybind (default `G`, rebindable in the controls screen under the Pandorical category, bar >= 20) or involuntarily at 100. Either way: a layer at your feet, a fart, a hunger point, and a reset bar. Sneak while pooping to aim it one block behind you, dropping into whatever is down there, which is exactly how you use a latrine pit with dignity. Aimed at a crop it is manure instead: the plant gets a bonemeal's growth and no pile is ever left in the row (a crop grown out just wastes it), and a double deuce (bar at 80 or more) feeds the plants round it as well. Also: your first ever step into the Nether carries a 50% chance of an immediate accident, rolled exactly once per player, regardless of how empty you thought you were.
 
 The bar is per player and survives a relog. It does **not** survive a death: you come back empty, which is the one mercy in the whole system.
 
 ## Bed Accidents
 
-Going to sleep on a full intestine is a roll of the dice. Nothing under 70, ramping to a 1-in-3 chance at a full bar, and a flat 60% if you turn in with diarrhea. It lands a couple of seconds into the sleep screen, close enough to hear, and the bed comes out of the night brown whatever colour it went in: it drops as a brown bed too, so the only cleanup is a new bed. You wake to a quiet "Not again...". Straw beds have no wool to stain and get away with the noise alone.
+Going to sleep on a full intestine is a roll of the dice. Nothing under 70, ramping to a 1-in-3 chance at a full bar, and a flat 60% if you turn in with diarrhea. It lands a couple of seconds into the sleep screen, close enough to hear. The bar empties and the hunger point is spent as if you had gone properly, and you wake to a quiet "Not again...". The bed is left alone.
 
 ## Village Latrines
 
@@ -76,34 +84,15 @@ Bats finally earn their keep. Every bat drops guano roughly once per day on its 
 - **Gunpowder**: 1 guano + 1 charcoal + 1 sulfur makes 5 gunpowder. Charcoal specifically, coal will not do, and either ordinary or potent sulfur works. Saltpeter, charcoal and brimstone: the real recipe, and the guano is the saltpeter.
 - **Dung fuel**: the whole family burns. Poop and poop layers smelt about 1.5 items each, guano and guano layers twice that, and the full blocks run a furnace for 4 of their item's worth. Nothing beats coal per item; the point is having somewhere useful to shovel it all.
 
-## Source Map
-
-| File | What is in it |
-|---|---|
-| `PoopLayerBlock.java` | The stacking block: containment, spread, decay, no collision |
-| `PoopPlacement.java` | Where a deposit actually lands, and what it does when it cannot |
-| `AnimalSize.java` | How much an animal leaves and how often, from how big it is |
-| `PoopOwners.java` | Who left a pile and how cold the trail is, for block-tip |
-| `PoopFlies.java` | The specks over a loose pile |
-| `PoopUrge.java` | Every animal's own randomly-seeded schedule |
-| `LlamaPoopGoal.java` | Walking to the communal spot |
-| `player/PlayerPoopManager.java` | The bar, diarrhea, going voluntarily and otherwise |
-| `player/DigestiveHud.java` | The stomach, intestine and sphincter, drawn over vanilla's hunger bar |
-| `player/BedAccident.java` | Turning in on a full intestine |
-| `BatBoxBlock.java` | The roost that makes guano without a bat |
-| `LatrineStructureInjector.java` | Putting a privy in the village house pool |
-| `LatrinePitProcessor.java` | Digging the pit out under it |
-| `integration/` | block-tip tips, village-quests work, village-builder construction |
-
 ## Pandorical
 
 Poopsmith runs server-side, and Pandorical is a hard dependency: it carries every client-facing piece. Block, item and asset sync (the textures ship in this jar; Pandorical's virtual resource pack delivers them), the thrown-poop renderer, the digestive HUD including its takeover of vanilla's hunger bar, the poopsmith's gloves overlay, and the poop keybind, which is a pooled Pandorical keybind so no poopsmith jar ever reaches a client.
 
 Clients are the optional half. A player on a Pandorical client gets the bar and the keybind; a player on a vanilla client participates fully server-side but cannot see the bar or go voluntarily. Accidents happen.
 
-## Installation
+## Development
 
-Install server-side alongside its declared dependencies (see `fabric.mod.json`); connecting clients need only Pandorical. Version targets live in `gradle.properties` (Minecraft, loader, Fabric API) and `fabric.mod.json` (Java).
+Installing and the map of the source are in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## License
 

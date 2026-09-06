@@ -9,6 +9,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.StemBlock;
+import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
@@ -295,19 +298,14 @@ public final class PoopPlacement {
 			Block.UPDATE_CLIENTS);
 	}
 
-	/**
-	 * How far a deposit can fall and still land as something.
-	 *
-	 * <p>Six is about a storey. Past that it has come apart by the time it arrives, which is why
-	 * nothing is placed from a cliff top and the ground below simply gets the good of it.
-	 */
-	public static final int MAX_FALL = 6;
+	/** What a falling deposit met at the bottom, and where. */
+	public record Landing(BlockPos pos, Medium medium) {}
+
+	public enum Medium { GROUND, WATER, LAVA }
 
 	/**
-	 * A deposit with too far to fall: nothing lands, but whatever is underneath is fed.
-	 *
-	 * <p>The ground is found by looking rather than assumed to be six down, because the whole point
-	 * of this path is that it was further than that.
+	 * A deposit whose column never offered a landing: nothing lands, but whatever is underneath
+	 * is fed.
 	 */
 	public static void scatterFrom(ServerLevel world, BlockPos origin) {
 		BlockPos ground = origin;
@@ -321,25 +319,46 @@ public final class PoopPlacement {
 		fertilizeAround(world, ground);
 	}
 
-	public static Optional<BlockPos> depositWithDrop(ServerLevel world, BlockPos origin, int maxDrop,
+	public static Optional<Landing> depositWithDrop(ServerLevel world, BlockPos origin, int maxDrop,
 			Entity source) {
+		// Whether the aimed spot was empty. It is the difference between "there is nowhere for
+		// this to go" and "this exact tile will not hold it", and those want opposite answers.
+		boolean roomAtOrigin = false;
+
 		for (int dy = 0; dy <= maxDrop; dy++) {
 			BlockPos pos = origin.below(dy);
+			// A column that ends in liquid ends AT the liquid: no layer survives underwater
+			// (the rule waterPoop already keeps at ground level), and lava needs no help. The
+			// caller decides what the arrival looks and sounds like; nothing is placed.
+			var fluid = world.getFluidState(pos);
+			if (!fluid.isEmpty()) {
+				return Optional.of(new Landing(pos, fluid.is(net.minecraft.tags.FluidTags.LAVA)
+					? Medium.LAVA : Medium.WATER));
+			}
 			if (tryDepositAt(world, pos, Main.POOP_LAYER_BLOCK)) {
 				PoopOwners.record(world, pos, source);
 				faceLike(world, pos, source);
-				return Optional.of(pos);
+				return Optional.of(new Landing(pos, Medium.GROUND));
 			}
 			BlockState state = world.getBlockState(pos);
 			if (state.is(Main.POOP_LAYER_BLOCK)) {
 				// Aimed at a heap that has stopped taking layers: let it slide
 				// aside down there rather than bouncing the whole deposit back
 				// to the aimer's own feet
-				return deposit(world, pos, source);
+				return deposit(world, pos, source).map(p -> new Landing(p, Medium.GROUND));
 			}
-			if (!state.isAir() && !state.canBeReplaced()) {
-				return Optional.empty();
-			}
+			if (dy == 0) roomAtOrigin = state.isAir() || state.canBeReplaced();
+
+			if (!state.isAir() && !state.canBeReplaced()) break;
+		}
+
+		// The column held nothing. If there was room where it was aimed, the ground under it
+		// simply cannot carry a pile - a bottom slab, a stair, anything whose top is not a full
+		// face - and the answer is the one a full heap already gets: slide aside and land next
+		// to it. Scattering there was the poop dissolving into a puff of fertiliser on ordinary
+		// flat ground, which reads as the mechanic failing rather than happening.
+		if (roomAtOrigin) {
+			return deposit(world, origin, source).map(landed -> new Landing(landed, Medium.GROUND));
 		}
 		return Optional.empty();
 	}
@@ -376,9 +395,16 @@ public final class PoopPlacement {
 		if (animal.isInWater()) {
 			return waterPoop(world, animal);
 		}
+		int helpings = AnimalSize.layers(animal);
+		// Standing in a crop, it is manure where it falls: the plant gets the growth, and a big
+		// animal's double helping feeds the plants round it. That is what makes a pen laid over
+		// a field worth the fence: the stock grow the crop as they graze it.
+		if (manure(world, animal.blockPosition(), helpings > 1)) {
+			playFart(world, animal);
+			return true;
+		}
 		// A second helping for the biggest of them, laid by the same rules as the first: it
 		// stacks onto what just landed, or spreads to the next square if that pile is full.
-		int helpings = AnimalSize.layers(animal);
 		boolean any = false;
 		for (int i = 0; i < helpings; i++) {
 			if (deposit(world, animal.blockPosition(), animal).isPresent()) any = true;
@@ -546,6 +572,31 @@ public final class PoopPlacement {
 		// Nothing bonemealable in range (streets, latrine pits, bare dirt):
 		// the charge escapes as a visible puff so the action never reads dead
 		world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 5);
+	}
+
+	/**
+	 * Poop aimed at a crop is muck on the crop: one bonemeal's growth for it, and no pile left
+	 * standing in the field. A double deuce is more than the one plant's share, so it goes round
+	 * the plants beside it too. False only when it was not aimed at a crop at all. A crop that has
+	 * grown all it will still takes the deposit - as a puff, to nothing - because the other
+	 * answer was to land it as poop, and a pile arriving in a row of crops is a crop lost.
+	 */
+	public static boolean manure(ServerLevel world, BlockPos aim, boolean generous) {
+		if (!isCrop(world.getBlockState(aim))) return false;
+		boolean any = tryGrow(world, aim);
+		if (generous) {
+			for (BlockPos pos : spreadOrder(aim, world.getRandom())) {
+				if (isCrop(world.getBlockState(pos)) && tryGrow(world, pos)) any = true;
+			}
+		}
+		if (!any) {
+			world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, aim, 5);
+		}
+		return true;
+	}
+
+	private static boolean isCrop(BlockState state) {
+		return state.is(BlockTags.CROPS) || state.getBlock() instanceof CropBlock || state.getBlock() instanceof StemBlock;
 	}
 
 	private static boolean tryGrow(ServerLevel world, BlockPos pos) {

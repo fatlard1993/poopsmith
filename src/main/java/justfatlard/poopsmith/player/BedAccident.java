@@ -8,11 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.block.AbstractBedBlock;
-import net.minecraft.world.level.block.BedBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Set;
 import java.util.UUID;
@@ -21,10 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Going to bed full is a gamble; going to bed with diarrhea is a bad hand.
  *
- * <p>The roll happens as you climb in, the accident lands a couple of seconds
- * into the sleep screen (so the sound arrives while you are lying there, not as
- * you lie down), and the bed carries the evidence afterwards: it comes out of
- * the night brown, whatever colour it went in.
+ * <p>The roll happens as you climb in, and the accident lands a couple of
+ * seconds into the sleep screen, so the sound arrives while you are lying there
+ * rather than as you lie down. The bed itself is left alone. It used to come out
+ * of the night brown, whatever colour it went in, and a ruined bed for a bad
+ * roll was a price nobody was laughing at by the second time.
  */
 public final class BedAccident {
 	private BedAccident() {}
@@ -82,34 +78,10 @@ public final class BedAccident {
 	private static void soil(ServerPlayer player, BlockPos bedPos, PoopLevelData data) {
 		ServerLevel world = (ServerLevel) player.level();
 		PoopPlacement.playFart(world, player);
-		stain(world, bedPos);
 		// The bed took the deposit, so there is no layer to place: the bar
 		// empties and the hunger point is spent all the same
 		PlayerPoopManager.settle(player, data);
 		soiled.add(player.getUUID());
-	}
-
-	/**
-	 * Both halves in one breath and with no shape updates: a bed whose halves
-	 * disagree fails its own neighbour check and breaks itself into air.
-	 *
-	 * <p>Dyed beds only. Brown is a wool colour and a straw bed has no wool,
-	 * so a straw bed keeps its looks and the player keeps the rest.
-	 */
-	private static void stain(ServerLevel world, BlockPos bedPos) {
-		Block brownBed = Blocks.BED.brown();
-		BlockState state = world.getBlockState(bedPos);
-		if (!(state.getBlock() instanceof BedBlock) || state.is(brownBed)) return;
-
-		BlockPos otherPos = bedPos.relative(AbstractBedBlock.getConnectedDirection(state));
-		BlockState other = world.getBlockState(otherPos);
-		int flags = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
-
-		world.setBlock(bedPos, brownBed.withPropertiesOf(state), flags);
-		if (other.getBlock() instanceof BedBlock
-				&& other.getValue(AbstractBedBlock.PART) != state.getValue(AbstractBedBlock.PART)) {
-			world.setBlock(otherPos, brownBed.withPropertiesOf(other), flags);
-		}
 	}
 
 	private static void onWake(ServerPlayer player) {
