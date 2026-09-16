@@ -97,6 +97,62 @@ def poop_pile(size, seed, base=BROWN, dark=DARK, darker=DARKER, light=LIGHT):
     return rows
 
 
+ICON_OUTLINE = (0x2A, 0x19, 0x0B, 0xFF)
+ICON_SHINE = (0x9C, 0x6D, 0x40, 0xFF)
+FLY = (0x16, 0x14, 0x12, 0xFF)
+FLY_WING = (0xC8, 0xD8, 0xE0, 0xFF)
+
+
+def mod_icon(seed):
+    """128x128 mod icon: a 32px pixel-art swirl pile scaled 4x nearest, so it
+    reads as blocky as the rest of the suite rather than a smooth 128px blob.
+    Each tier is shaded as a lit ellipse (light from the upper left, like
+    vanilla item sprites) and upper tiers cast a crease onto the one below."""
+    n = 32
+    rng = random.Random(seed)
+    rows = [[CLEAR] * n for _ in range(n)]
+    owner = [[-1] * n for _ in range(n)]
+    # (center_x, center_y, radius_x, radius_y) tiers, bottom to top
+    tiers = [(16, 25.0, 12.5, 4.6), (16, 19.2, 9.6, 4.0), (16.5, 14.0, 6.8, 3.4),
+             (17.5, 9.6, 4.0, 2.8), (19.0, 6.6, 2.6, 2.2)]
+    for y in range(n):
+        for x in range(n):
+            for i in reversed(range(len(tiers))):
+                cx, cy, rx, ry = tiers[i]
+                dx, dy = (x + 0.5 - cx) / rx, (y + 0.5 - cy) / ry
+                if dx * dx + dy * dy <= 1.0:
+                    light = -(dx * 0.55 + dy * 0.85)
+                    rows[y][x] = (ICON_SHINE if light > 0.72 else LIGHT if light > 0.25
+                                  else BROWN if light > -0.45 else DARK)
+                    owner[y][x] = i
+                    break
+    for (x, y) in [(21, 4), (22, 4), (21, 5), (22, 3), (23, 3)]:
+        rows[y][x] = BROWN
+        owner[y][x] = len(tiers) - 1
+    rows[5][18] = ICON_SHINE
+    for y in range(n - 1):
+        for x in range(n):
+            if 0 <= owner[y + 1][x] < owner[y][x]:
+                rows[y + 1][x] = DARKER
+    for y in range(n):
+        for x in range(n):
+            if rows[y][x] in (BROWN, LIGHT) and rng.random() < 0.07:
+                rows[y][x] = DARK
+    outlined = [row[:] for row in rows]
+    for y in range(n):
+        for x in range(n):
+            if rows[y][x][3] == 0:
+                continue
+            if any(not (0 <= x + dx < n and 0 <= y + dy < n) or rows[y + dy][x + dx][3] == 0
+                   for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                outlined[y][x] = ICON_OUTLINE
+    for (x, y) in [(7, 6), (26, 11), (10, 13)]:
+        outlined[y][x] = FLY
+        outlined[y - 1][x - 1] = FLY_WING
+        outlined[y - 1][x + 1] = FLY_WING
+    return [[outlined[y // 4][x // 4] for x in range(128)] for y in range(128)]
+
+
 def planks(size, seed):
     """Horizontal plank rows with grain flecks and dark seams."""
     rng = random.Random(seed)
@@ -325,7 +381,7 @@ write_png(os.path.join(OUT, "textures/block/poop.png"),
 write_png(os.path.join(OUT, "textures/block/poop_block.png"),
           speckle(16, BROWN, [DARK, DARKER, LIGHT, DARK], 0.38, seed=2607))
 write_png(os.path.join(OUT, "textures/item/poop.png"), poop_pile(16, seed=1793))
-write_png(os.path.join(OUT, "icon.png"), poop_pile(128, seed=1793))
+write_png(os.path.join(OUT, "icon.png"), mod_icon(seed=1793))
 
 write_png(os.path.join(OUT, "textures/block/guano.png"),
           speckle(16, GUANO, [GUANO_DARK, GUANO_DARKER, GUANO_LIGHT], 0.30, seed=4451))

@@ -2,6 +2,12 @@
 
 A Minecraft Fabric mod. Everything that eats, poops.
 
+## Screenshots
+
+![A village privy on its dirt street, a villager at the door, and the piles of those who did not make it](latrine.png)
+![A paddock that has been lived in: a mat of piles spreading across it, and the herd that left them](paddock.png)
+![A roost paying its way: a bat box on the wall and the bed of guano built up under it](roost.png)
+
 ## What This Mod Does
 
 Animals drop layers on their own daily schedule, players carry a server-tracked digestive tract, villagers use the privy if the village built one, bats pay their way in guano, and the poop rots down into fertiliser. It is a nutrient cycle with a punchline, and the punchline is load-bearing: the reason to shovel the street is that the shovelling is worth something.
