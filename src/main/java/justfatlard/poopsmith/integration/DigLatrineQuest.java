@@ -82,9 +82,8 @@ public class DigLatrineQuest extends VillagerQuest {
 			"You dug it, you seeded it, and now it belongs to everyone. Here are two more seeds. Spread the practice.",
 			"That is fine civic work. Keep these poop blocks; a traveler who can found a privy is welcome anywhere.",
 		};
-		player.sendSystemMessage(
-			Component.literal(requesterName + ": \"" + responses[ThreadLocalRandom.current().nextInt(responses.length)] + "\"")
-				.withStyle(ChatFormatting.GREEN), true);
+		justfatlard.village_quests.util.VillagerVoice.queue(player, this.getVillagerUuid(), requesterName,
+			responses[ThreadLocalRandom.current().nextInt(responses.length)]);
 		this.completed = true;
 	}
 }

@@ -5,6 +5,8 @@
     "minecraft:farmland",
     "minecraft:mud",
     "minecraft:soul_sand",
-    "minecraft:honey_block"
+    "minecraft:honey_block",
+    "#minecraft:beds",
+    "#minecraft:wool_carpets"
   ]
 }

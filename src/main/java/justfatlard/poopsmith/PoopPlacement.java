@@ -21,15 +21,16 @@ import java.util.Optional;
 
 /**
  * Shared poop-deposit logic for animals, llamas, and players.
- * Natural accumulation caps at {@link #NATURAL_MAX_LAYERS} (7): the world
- * never fills a full-height stack on its own; only hand-placement reaches 8.
+ * Natural accumulation caps at {@link #NATURAL_MAX_LAYERS}, the full eight layers, and the ninth
+ * deposit packs the pile into a block where something holds it in: nine poop to a block, the same
+ * nine it crafts from and back into. Anything higher starts on that block.
  * On open ground it stops far lower, at {@link #OPEN_STACK_LAYERS}: a heap
  * with nothing holding it in slides sideways rather than growing a tower.
  */
 public final class PoopPlacement {
 	private PoopPlacement() {}
 
-	public static final int NATURAL_MAX_LAYERS = 7;
+	public static final int NATURAL_MAX_LAYERS = PoopLayerBlock.MAX_LAYERS;
 
 	/**
 	 * Layers a stack reaches on open ground before further deposits slide off
@@ -65,7 +66,7 @@ public final class PoopPlacement {
 	 * quietly forget to leave a trail.
 	 */
 	public static Optional<BlockPos> deposit(ServerLevel world, BlockPos origin, Entity source) {
-		Optional<BlockPos> placed = deposit(world, origin, Main.POOP_LAYER_BLOCK);
+		Optional<BlockPos> placed = deposit(world, aboveFurniture(world, origin), Main.POOP_LAYER_BLOCK);
 		placed.ifPresent(pos -> {
 			PoopOwners.record(world, pos, source);
 			faceLike(world, pos, source);
@@ -153,7 +154,7 @@ public final class PoopPlacement {
 	 * out of caves in beds, so a bat colony leaves something worth swinging a shovel at.
 	 *
 	 * <p>Either way the block left behind is sturdy ground for the next stack to start on, which is
-	 * how a deposit grows upward instead of stopping at seven.
+	 * how a deposit grows upward instead of stopping at eight.
 	 */
 	private static Optional<BlockPos> raiseLowest(ServerLevel world, BlockPos origin, PoopLayerBlock layerBlock) {
 		BlockPos lowest = null;
@@ -319,8 +320,23 @@ public final class PoopPlacement {
 		fertilizeAround(world, ground);
 	}
 
+	/**
+	 * Where a deposit aimed at somebody's feet starts from.
+	 *
+	 * <p>Feet in a bed, a carpet or a low slab are inside the furniture's own block, and aiming
+	 * there hits the furniture: a player standing on a bed could not go on it, only beside it.
+	 * When the tile at the feet is taken and the one above is open, the deposit starts above.
+	 */
+	private static BlockPos aboveFurniture(ServerLevel world, BlockPos origin) {
+		BlockState here = world.getBlockState(origin);
+		if (here.isAir() || here.canBeReplaced() || here.getBlock() instanceof PoopLayerBlock) return origin;
+		BlockState up = world.getBlockState(origin.above());
+		return up.isAir() || up.canBeReplaced() ? origin.above() : origin;
+	}
+
 	public static Optional<Landing> depositWithDrop(ServerLevel world, BlockPos origin, int maxDrop,
 			Entity source) {
+		origin = aboveFurniture(world, origin);
 		// Whether the aimed spot was empty. It is the difference between "there is nowhere for
 		// this to go" and "this exact tile will not hold it", and those want opposite answers.
 		boolean roomAtOrigin = false;

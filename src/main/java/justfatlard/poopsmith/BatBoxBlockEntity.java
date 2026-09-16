@@ -29,8 +29,10 @@ public class BatBoxBlockEntity extends BlockEntity {
 	// The water scan is the expensive test, so its result is cached and
 	// refreshed only every N checks (~1000 ticks)
 	private static final int WATER_RESCAN_CHECKS = 5;
+	// A box hangs at head height or higher and the water it drinks from lies at the shore, so
+	// the vertical reach matches the horizontal: two blocks missed a lake five below the box.
 	private static final int WATER_RANGE_HORIZONTAL = 8;
-	private static final int WATER_RANGE_VERTICAL = 2;
+	private static final int WATER_RANGE_VERTICAL = 8;
 	private static final int CLEARANCE_BLOCKS = 2;
 
 	private int stored = 0;
@@ -59,15 +61,29 @@ public class BatBoxBlockEntity extends BlockEntity {
 	}
 
 	private boolean isProductive(Level world, BlockPos pos) {
-		if (!world.canSeeSky(pos.above())) return false;
-		for (int dy = 1; dy <= CLEARANCE_BLOCKS; dy++) {
-			if (world.getBlockState(pos.below(dy)).isSolid()) return false;
-		}
+		return blocker(world, pos) == null;
+	}
+
+	/**
+	 * What stops this box filling, or null when nothing does.
+	 *
+	 * <p>In the order a player would fix them, and every test runs on every call: the water
+	 * scan used to sit behind the sky and clearance tests and only ran when those passed, so a
+	 * box under a roof reported no water when it had a lake beside it. The scan is the dear
+	 * test, so its answer is kept for a few checks; a box asked before its first check scans
+	 * on the spot rather than reporting the empty default.
+	 */
+	public String blocker(Level world, BlockPos pos) {
 		if (++checksSinceWaterScan >= WATER_RESCAN_CHECKS) {
 			checksSinceWaterScan = 0;
 			waterNearby = scanForWater(world, pos);
 		}
-		return waterNearby;
+		if (!world.canSeeSky(pos.above())) return "No open sky above";
+		for (int dy = 1; dy <= CLEARANCE_BLOCKS; dy++) {
+			if (world.getBlockState(pos.below(dy)).isSolid()) return "No room to hang below";
+		}
+		if (!waterNearby) return "No water within " + WATER_RANGE_HORIZONTAL + " blocks";
+		return null;
 	}
 
 	private static boolean scanForWater(Level world, BlockPos center) {
@@ -99,8 +115,13 @@ public class BatBoxBlockEntity extends BlockEntity {
 		return this.stored;
 	}
 
-	/** False when the box will never fill: bats want water in range. */
+	/** False when the box will never fill: bats want water in range. Scans if it has not yet. */
 	public boolean hasWaterNearby() {
+		Level world = this.getLevel();
+		if (world != null && checksSinceWaterScan >= WATER_RESCAN_CHECKS) {
+			checksSinceWaterScan = 0;
+			waterNearby = scanForWater(world, worldPosition);
+		}
 		return this.waterNearby;
 	}
 

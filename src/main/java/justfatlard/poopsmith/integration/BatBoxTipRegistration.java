@@ -26,7 +26,8 @@ public final class BatBoxTipRegistration {
 			BlockEntity blockEntity = level.getBlockEntity(pos);
 			if (!(blockEntity instanceof BatBoxBlockEntity box)) return null;
 
-			if (!box.hasWaterNearby()) return "No water in range";
+			String blocker = box.blocker(level, pos);
+			if (blocker != null) return blocker;
 
 			int stored = box.stored();
 			if (stored <= 0) return "Empty";

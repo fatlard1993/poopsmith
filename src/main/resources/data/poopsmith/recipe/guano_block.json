@@ -5,8 +5,9 @@
     "#": "poopsmith:guano"
   },
   "pattern": [
-    "##",
-    "##"
+    "###",
+    "###",
+    "###"
   ],
   "result": {
     "id": "poopsmith:guano_block"

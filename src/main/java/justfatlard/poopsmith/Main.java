@@ -165,9 +165,9 @@ public class Main implements ModInitializer {
 			// because 0.5 is exactly what mud and sand already weigh.
 			.strength(0.1F)
 			.sound(SoundType.SNOW)
-			.randomTicks()
 			.setId(GUANO_LAYER_BLOCK_KEY),
-		PoopLayerBlock.SHEET_HEIGHTS
+		PoopLayerBlock.SHEET_HEIGHTS,
+		false
 	);
 
 	public static final Block GUANO_BLOCK = new Block(
@@ -336,8 +336,8 @@ public class Main implements ModInitializer {
 		// Forced decay: breaking any poop-family block without a shovel
 		// applies the decay's bonemeal action instead of drops (drops are
 		// tool-gated via requiresCorrectToolForDrops + the mineable/shovel
-		// tag, snow-style). One fertilize charge per layer; full blocks are
-		// eight layers' worth. Creative breaking stays clean.
+		// tag, snow-style). One fertilize charge per layer; a full block is
+		// nine, the same nine poop it crafts from. Creative breaking stays clean.
 		net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.AFTER.register(
 			(world, player, pos, state, blockEntity) -> {
 				if (!(world instanceof net.minecraft.server.level.ServerLevel serverWorld)) return;
@@ -346,7 +346,8 @@ public class Main implements ModInitializer {
 				boolean isBlock = state.is(POOP_BLOCK) || state.is(GUANO_BLOCK);
 				if (!isLayer && !isBlock) return;
 				if (player.getMainHandItem().is(net.minecraft.tags.ItemTags.SHOVELS)) return;
-				int charges = isLayer ? state.getValue(PoopLayerBlock.LAYERS) : 8;
+				// A full block is nine: the eight layers a heap stacks to, and the block that caps it.
+				int charges = isLayer ? state.getValue(PoopLayerBlock.LAYERS) : PoopLayerBlock.MAX_LAYERS + 1;
 				for (int i = 0; i < charges; i++) {
 					PoopPlacement.fertilizeAround(serverWorld, pos);
 				}

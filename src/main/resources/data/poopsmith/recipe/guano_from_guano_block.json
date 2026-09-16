@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "poopsmith:guano_block"
+  ],
+  "result": {
+    "count": 9,
+    "id": "poopsmith:guano"
+  }
+}

@@ -118,16 +118,20 @@ public final class PlayerPoopManager {
 	}
 
 	private static void runDueTasks() {
+		// Collected first and run after, because a task that runs may schedule the next one,
+		// and that appends to the list it would otherwise still be walking.
+		List<Runnable> due = new ArrayList<>();
 		synchronized (delayedTasks) {
 			Iterator<DelayedTask> iterator = delayedTasks.iterator();
 			while (iterator.hasNext()) {
 				DelayedTask delayed = iterator.next();
 				if (tickCounter >= delayed.runAtTick()) {
 					iterator.remove();
-					delayed.task().run();
+					due.add(delayed.task());
 				}
 			}
 		}
+		for (Runnable task : due) task.run();
 	}
 
 	/** Called from the FoodProperties.onConsume mixin after any finished meal. */
@@ -297,10 +301,13 @@ public final class PlayerPoopManager {
 				}
 			}
 
-			// The second of a double deuce goes through the same rules as the first, so it lands
-			// beside its twin rather than on top of it wherever the ground is open.
+			// The second of a double deuce follows the first: aimed behind, both go behind.
+			// It falls the same way, onto its twin or beside it, and only if that spot has
+			// stopped taking it does it come down at your feet.
 			if (doubleDeuce) {
-				PoopPlacement.deposit(world, player.blockPosition(), player);
+				boolean followed = landing != null && PoopPlacement.depositWithDrop(world, from,
+					from.getY() - world.getMinY(), player).isPresent();
+				if (!followed) PoopPlacement.deposit(world, player.blockPosition(), player);
 			}
 		}
 

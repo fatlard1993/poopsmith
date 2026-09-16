@@ -5,8 +5,9 @@
     "#": "poopsmith:poop"
   },
   "pattern": [
-    "##",
-    "##"
+    "###",
+    "###",
+    "###"
   ],
   "result": {
     "id": "poopsmith:poop_block"

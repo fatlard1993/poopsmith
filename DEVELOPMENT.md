@@ -12,6 +12,7 @@ For what the mod is and how it plays, see [README.md](README.md).
 | `PoopOwners.java` | Who left a pile and how cold the trail is, for block-tip |
 | `PoopFlies.java` | The specks over a loose pile |
 | `PoopUrge.java` | Every animal's own randomly-seeded schedule |
+| `DropTheater.java` | A poop dropped off a ledge: the whistle down, the landing, the echo back up |
 | `LlamaPoopGoal.java` | Walking to the communal spot |
 | `player/PlayerPoopManager.java` | The bar, diarrhea, going voluntarily and otherwise |
 | `player/DigestiveHud.java` | The stomach, intestine and sphincter, drawn over vanilla's hunger bar |

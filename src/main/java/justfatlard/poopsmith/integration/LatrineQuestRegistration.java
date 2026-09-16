@@ -5,9 +5,11 @@ import justfatlard.poopsmith.PoopPlacement;
 import justfatlard.village_quests.api.QuestRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -31,7 +33,9 @@ public final class LatrineQuestRegistration {
 	// The town-cleanup quest opens above this many open-air piles; the llama
 	// schedule guarantees recurrence
 	private static final int CLEANUP_OFFER_THRESHOLD = 6;
-	private static final float OFFER_CHANCE = 0.25F;
+	// Universal, so every villager in the village rolls it; the sibling mods'
+	// quests sit at 6-12% for a single profession each
+	private static final float OFFER_CHANCE = 0.10F;
 	private static final int WITNESS_REPUTATION_DING = -1;
 
 	private LatrineQuestRegistration() {}
@@ -47,7 +51,13 @@ public final class LatrineQuestRegistration {
 				return new CleanupTownQuest(villagerName, villager.getUUID());
 			}
 
-			List<BlockPos> pits = PoopPlacement.findLatrinePits(world, villager.blockPosition());
+			// The scan reaches 32 blocks, less than a village is wide, so it also
+			// looks from the villager's bell: otherwise anyone living across the
+			// square asks for a latrine the village already has
+			List<BlockPos> pits = new ArrayList<>(PoopPlacement.findLatrinePits(world, villager.blockPosition()));
+			villager.getBrain().getMemory(MemoryModuleType.MEETING_POINT)
+				.filter(bell -> bell.dimension() == world.dimension())
+				.ifPresent(bell -> pits.addAll(PoopPlacement.findLatrinePits(world, bell.pos())));
 
 			if (pits.isEmpty()) {
 				return new DigLatrineQuest(villagerName, villager.getUUID(), new HashSet<>());

@@ -53,9 +53,8 @@ public class CleanupTownQuest extends VillagerQuest {
 			"The streets are streets again. That was honest work and everyone saw you do it.",
 			"Clean. Actually clean. Enjoy it while it lasts; the llamas certainly won't let it.",
 		};
-		player.sendSystemMessage(
-			Component.literal(requesterName + ": \"" + responses[ThreadLocalRandom.current().nextInt(responses.length)] + "\"")
-				.withStyle(ChatFormatting.GREEN), true);
+		justfatlard.village_quests.util.VillagerVoice.queue(player, this.getVillagerUuid(), requesterName,
+			responses[ThreadLocalRandom.current().nextInt(responses.length)]);
 		this.completed = true;
 	}
 }

@@ -47,9 +47,8 @@ public class CleanLatrineQuest extends FetchItemQuest {
 			"*nods without breathing through the nose* Good work. Genuinely. Now please stand downwind.",
 			"The privy lives to serve another season. That was you. Wear it proudly. From a distance.",
 		};
-		player.sendSystemMessage(
-			Component.literal(requesterName + ": \"" + responses[ThreadLocalRandom.current().nextInt(responses.length)] + "\"")
-				.withStyle(ChatFormatting.GREEN), true);
+		justfatlard.village_quests.util.VillagerVoice.queue(player, this.getVillagerUuid(), requesterName,
+			responses[ThreadLocalRandom.current().nextInt(responses.length)]);
 		this.completed = true;
 	}
 }

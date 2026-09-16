@@ -152,3 +152,62 @@ for family in ("poop", "guano"):
     for height in SLAB_HEIGHTS:
         write(f"{family}_height{height}",
               model("minecraft:block/thin_block", texture, slab(height)))
+
+
+# --- On a bed -----------------------------------------------------------------
+#
+# A pile on a bed sits down onto the mattress, seven pixels below its own block
+# (see PoopLayerBlock.ON_BED), and stops at three layers - so only the first
+# three layer models need a lowered copy. Culling goes on those: a face moved
+# off the block's boundary no longer lies on the plane a neighbour would hide.
+
+BLOCKSTATES = os.path.join(os.path.dirname(__file__),
+                           "src/main/resources/assets/poopsmith/blockstates")
+
+BED_DROP = 7   # PoopLayerBlock.BED_DROP
+BED_LAYERS = 3  # PoopLayerBlock.BED_LAYERS
+
+LAYER_MODELS = {
+    "poop": ["poop_pile1", "poop_pile2", "poop_height6", "poop_height8",
+             "poop_height10", "poop_height12", "poop_height14", "poop_block"],
+    "guano": ["guano_height2", "guano_height4", "guano_height6", "guano_height8",
+              "guano_height10", "guano_height12", "guano_height14", "guano_full"],
+}
+
+FACING_Y = {"north": 0, "east": 90, "south": 180, "west": 270}
+
+
+def on_bed(name):
+    with open(os.path.join(OUT, name + ".json")) as f:
+        base = json.load(f)
+    elements = json.loads(json.dumps(base["elements"]))
+    for e in elements:
+        e["from"] = [e["from"][0], e["from"][1] - BED_DROP, e["from"][2]]
+        e["to"] = [e["to"][0], e["to"][1] - BED_DROP, e["to"][2]]
+        if "rotation" in e:
+            o = e["rotation"]["origin"]
+            e["rotation"]["origin"] = [o[0], o[1] - BED_DROP, o[2]]
+        for face in e["faces"].values():
+            face.pop("cullface", None)
+    write(f"{name}_bed", {"parent": base["parent"], "textures": base["textures"], "elements": elements})
+
+
+for family, names in LAYER_MODELS.items():
+    for name in names[:BED_LAYERS]:
+        on_bed(name)
+    variants = {}
+    for facing, y in FACING_Y.items():
+        for layers, name in enumerate(names, start=1):
+            for bed in ("false", "true"):
+                # Past three layers a pile is never on a bed; the state exists all the same
+                # and is drawn as it would be off one.
+                lowered = bed == "true" and layers <= BED_LAYERS
+                variant = {"model": f"poopsmith:block/{name}" + ("_bed" if lowered else "")}
+                if y:
+                    variant["y"] = y
+                variants[f"facing={facing},layers={layers},on_bed={bed}"] = variant
+    path = os.path.join(BLOCKSTATES, f"{family}_layer.json")
+    with open(path, "w") as f:
+        json.dump({"variants": variants}, f, indent=2)
+        f.write("\n")
+    print(f"wrote {path}")

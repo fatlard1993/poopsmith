@@ -18,9 +18,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>The roll happens as you climb in, and the accident lands a couple of
  * seconds into the sleep screen, so the sound arrives while you are lying there
- * rather than as you lie down. The bed itself is left alone. It used to come out
- * of the night brown, whatever colour it went in, and a ruined bed for a bad
- * roll was a price nobody was laughing at by the second time.
+ * rather than as you lie down. A full bar or the runs is not a gamble at all: it
+ * happens. What it leaves is a pile on the bed, sitting on the mattress, which a
+ * shovel takes off again. The bed itself is left alone. It used to come out of
+ * the night brown, whatever colour it went in, and a ruined bed for a bad roll
+ * was a price nobody was laughing at by the second time.
  */
 public final class BedAccident {
 	private BedAccident() {}
@@ -69,6 +71,7 @@ public final class BedAccident {
 
 	private static float risk(PoopLevelData data, UUID uuid) {
 		int level = data.getLevel(uuid);
+		if (level >= PoopLevelData.MAX_LEVEL || data.getDiarrheaTicks(uuid) > 0) return 1.0F;
 		float full = level <= RISK_THRESHOLD ? 0.0F
 			: FULL_RISK * (level - RISK_THRESHOLD) / (PoopLevelData.MAX_LEVEL - RISK_THRESHOLD);
 		float runs = data.getDiarrheaTicks(uuid) > 0 ? DIARRHEA_RISK : 0.0F;
@@ -78,8 +81,9 @@ public final class BedAccident {
 	private static void soil(ServerPlayer player, BlockPos bedPos, PoopLevelData data) {
 		ServerLevel world = (ServerLevel) player.level();
 		PoopPlacement.playFart(world, player);
-		// The bed took the deposit, so there is no layer to place: the bar
-		// empties and the hunger point is spent all the same
+		// On the bed, where they lie: a pile that sits down onto the mattress, and
+		// slides off onto the floor past three layers like any other
+		PoopPlacement.deposit(world, bedPos.above(), player);
 		PlayerPoopManager.settle(player, data);
 		soiled.add(player.getUUID());
 	}

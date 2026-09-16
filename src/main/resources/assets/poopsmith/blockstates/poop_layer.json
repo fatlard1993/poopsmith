@@ -1,122 +1,242 @@
 {
   "variants": {
-    "facing=north,layers=1": {
+    "facing=north,layers=1,on_bed=false": {
       "model": "poopsmith:block/poop_pile1"
     },
-    "facing=north,layers=2": {
+    "facing=north,layers=1,on_bed=true": {
+      "model": "poopsmith:block/poop_pile1_bed"
+    },
+    "facing=north,layers=2,on_bed=false": {
       "model": "poopsmith:block/poop_pile2"
     },
-    "facing=north,layers=3": {
+    "facing=north,layers=2,on_bed=true": {
+      "model": "poopsmith:block/poop_pile2_bed"
+    },
+    "facing=north,layers=3,on_bed=false": {
       "model": "poopsmith:block/poop_height6"
     },
-    "facing=north,layers=4": {
+    "facing=north,layers=3,on_bed=true": {
+      "model": "poopsmith:block/poop_height6_bed"
+    },
+    "facing=north,layers=4,on_bed=false": {
       "model": "poopsmith:block/poop_height8"
     },
-    "facing=north,layers=5": {
+    "facing=north,layers=4,on_bed=true": {
+      "model": "poopsmith:block/poop_height8"
+    },
+    "facing=north,layers=5,on_bed=false": {
       "model": "poopsmith:block/poop_height10"
     },
-    "facing=north,layers=6": {
+    "facing=north,layers=5,on_bed=true": {
+      "model": "poopsmith:block/poop_height10"
+    },
+    "facing=north,layers=6,on_bed=false": {
       "model": "poopsmith:block/poop_height12"
     },
-    "facing=north,layers=7": {
+    "facing=north,layers=6,on_bed=true": {
+      "model": "poopsmith:block/poop_height12"
+    },
+    "facing=north,layers=7,on_bed=false": {
       "model": "poopsmith:block/poop_height14"
     },
-    "facing=north,layers=8": {
+    "facing=north,layers=7,on_bed=true": {
+      "model": "poopsmith:block/poop_height14"
+    },
+    "facing=north,layers=8,on_bed=false": {
       "model": "poopsmith:block/poop_block"
     },
-    "facing=east,layers=1": {
+    "facing=north,layers=8,on_bed=true": {
+      "model": "poopsmith:block/poop_block"
+    },
+    "facing=east,layers=1,on_bed=false": {
       "model": "poopsmith:block/poop_pile1",
       "y": 90
     },
-    "facing=east,layers=2": {
+    "facing=east,layers=1,on_bed=true": {
+      "model": "poopsmith:block/poop_pile1_bed",
+      "y": 90
+    },
+    "facing=east,layers=2,on_bed=false": {
       "model": "poopsmith:block/poop_pile2",
       "y": 90
     },
-    "facing=east,layers=3": {
+    "facing=east,layers=2,on_bed=true": {
+      "model": "poopsmith:block/poop_pile2_bed",
+      "y": 90
+    },
+    "facing=east,layers=3,on_bed=false": {
       "model": "poopsmith:block/poop_height6",
       "y": 90
     },
-    "facing=east,layers=4": {
+    "facing=east,layers=3,on_bed=true": {
+      "model": "poopsmith:block/poop_height6_bed",
+      "y": 90
+    },
+    "facing=east,layers=4,on_bed=false": {
       "model": "poopsmith:block/poop_height8",
       "y": 90
     },
-    "facing=east,layers=5": {
+    "facing=east,layers=4,on_bed=true": {
+      "model": "poopsmith:block/poop_height8",
+      "y": 90
+    },
+    "facing=east,layers=5,on_bed=false": {
       "model": "poopsmith:block/poop_height10",
       "y": 90
     },
-    "facing=east,layers=6": {
+    "facing=east,layers=5,on_bed=true": {
+      "model": "poopsmith:block/poop_height10",
+      "y": 90
+    },
+    "facing=east,layers=6,on_bed=false": {
       "model": "poopsmith:block/poop_height12",
       "y": 90
     },
-    "facing=east,layers=7": {
+    "facing=east,layers=6,on_bed=true": {
+      "model": "poopsmith:block/poop_height12",
+      "y": 90
+    },
+    "facing=east,layers=7,on_bed=false": {
       "model": "poopsmith:block/poop_height14",
       "y": 90
     },
-    "facing=east,layers=8": {
+    "facing=east,layers=7,on_bed=true": {
+      "model": "poopsmith:block/poop_height14",
+      "y": 90
+    },
+    "facing=east,layers=8,on_bed=false": {
       "model": "poopsmith:block/poop_block",
       "y": 90
     },
-    "facing=south,layers=1": {
+    "facing=east,layers=8,on_bed=true": {
+      "model": "poopsmith:block/poop_block",
+      "y": 90
+    },
+    "facing=south,layers=1,on_bed=false": {
       "model": "poopsmith:block/poop_pile1",
       "y": 180
     },
-    "facing=south,layers=2": {
+    "facing=south,layers=1,on_bed=true": {
+      "model": "poopsmith:block/poop_pile1_bed",
+      "y": 180
+    },
+    "facing=south,layers=2,on_bed=false": {
       "model": "poopsmith:block/poop_pile2",
       "y": 180
     },
-    "facing=south,layers=3": {
+    "facing=south,layers=2,on_bed=true": {
+      "model": "poopsmith:block/poop_pile2_bed",
+      "y": 180
+    },
+    "facing=south,layers=3,on_bed=false": {
       "model": "poopsmith:block/poop_height6",
       "y": 180
     },
-    "facing=south,layers=4": {
+    "facing=south,layers=3,on_bed=true": {
+      "model": "poopsmith:block/poop_height6_bed",
+      "y": 180
+    },
+    "facing=south,layers=4,on_bed=false": {
       "model": "poopsmith:block/poop_height8",
       "y": 180
     },
-    "facing=south,layers=5": {
+    "facing=south,layers=4,on_bed=true": {
+      "model": "poopsmith:block/poop_height8",
+      "y": 180
+    },
+    "facing=south,layers=5,on_bed=false": {
       "model": "poopsmith:block/poop_height10",
       "y": 180
     },
-    "facing=south,layers=6": {
+    "facing=south,layers=5,on_bed=true": {
+      "model": "poopsmith:block/poop_height10",
+      "y": 180
+    },
+    "facing=south,layers=6,on_bed=false": {
       "model": "poopsmith:block/poop_height12",
       "y": 180
     },
-    "facing=south,layers=7": {
+    "facing=south,layers=6,on_bed=true": {
+      "model": "poopsmith:block/poop_height12",
+      "y": 180
+    },
+    "facing=south,layers=7,on_bed=false": {
       "model": "poopsmith:block/poop_height14",
       "y": 180
     },
-    "facing=south,layers=8": {
+    "facing=south,layers=7,on_bed=true": {
+      "model": "poopsmith:block/poop_height14",
+      "y": 180
+    },
+    "facing=south,layers=8,on_bed=false": {
       "model": "poopsmith:block/poop_block",
       "y": 180
     },
-    "facing=west,layers=1": {
+    "facing=south,layers=8,on_bed=true": {
+      "model": "poopsmith:block/poop_block",
+      "y": 180
+    },
+    "facing=west,layers=1,on_bed=false": {
       "model": "poopsmith:block/poop_pile1",
       "y": 270
     },
-    "facing=west,layers=2": {
+    "facing=west,layers=1,on_bed=true": {
+      "model": "poopsmith:block/poop_pile1_bed",
+      "y": 270
+    },
+    "facing=west,layers=2,on_bed=false": {
       "model": "poopsmith:block/poop_pile2",
       "y": 270
     },
-    "facing=west,layers=3": {
+    "facing=west,layers=2,on_bed=true": {
+      "model": "poopsmith:block/poop_pile2_bed",
+      "y": 270
+    },
+    "facing=west,layers=3,on_bed=false": {
       "model": "poopsmith:block/poop_height6",
       "y": 270
     },
-    "facing=west,layers=4": {
+    "facing=west,layers=3,on_bed=true": {
+      "model": "poopsmith:block/poop_height6_bed",
+      "y": 270
+    },
+    "facing=west,layers=4,on_bed=false": {
       "model": "poopsmith:block/poop_height8",
       "y": 270
     },
-    "facing=west,layers=5": {
+    "facing=west,layers=4,on_bed=true": {
+      "model": "poopsmith:block/poop_height8",
+      "y": 270
+    },
+    "facing=west,layers=5,on_bed=false": {
       "model": "poopsmith:block/poop_height10",
       "y": 270
     },
-    "facing=west,layers=6": {
+    "facing=west,layers=5,on_bed=true": {
+      "model": "poopsmith:block/poop_height10",
+      "y": 270
+    },
+    "facing=west,layers=6,on_bed=false": {
       "model": "poopsmith:block/poop_height12",
       "y": 270
     },
-    "facing=west,layers=7": {
+    "facing=west,layers=6,on_bed=true": {
+      "model": "poopsmith:block/poop_height12",
+      "y": 270
+    },
+    "facing=west,layers=7,on_bed=false": {
       "model": "poopsmith:block/poop_height14",
       "y": 270
     },
-    "facing=west,layers=8": {
+    "facing=west,layers=7,on_bed=true": {
+      "model": "poopsmith:block/poop_height14",
+      "y": 270
+    },
+    "facing=west,layers=8,on_bed=false": {
+      "model": "poopsmith:block/poop_block",
+      "y": 270
+    },
+    "facing=west,layers=8,on_bed=true": {
       "model": "poopsmith:block/poop_block",
       "y": 270
     }

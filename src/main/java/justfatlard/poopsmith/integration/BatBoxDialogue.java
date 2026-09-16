@@ -35,14 +35,21 @@ public final class BatBoxDialogue {
 				Component.literal("How do you keep the fields going without running out of bonemeal?"),
 				MIN_REPUTATION, Integer.MAX_VALUE)));
 
-		DialogueRegistry.registerDialogueHandler(OPTION_ID, BatBoxDialogue::sell);
+		// Asking is asking and paying is paying. The old handler took the
+		// emeralds the moment the question was clicked, so a player who only
+		// wanted to know found eight emeralds gone and a box in their pack.
+		DialogueRegistry.registerRichDialogueHandler(OPTION_ID, (villager, player, optionId) ->
+			DialogueRegistry.Reply.of("Bats. You hang a box up and they do the rest, and what they leave is worth more "
+					+ "to a field than anything you can buy. " + PRICE + " emeralds for one of mine, if you want it.")
+				.option("*pay the " + PRICE + " emeralds*", BatBoxDialogue::sell)
+				.walkAway("I'll think on it."));
 	}
 
-	private static Component sell(net.minecraft.world.entity.npc.villager.Villager villager,
+	private static DialogueRegistry.Reply sell(net.minecraft.world.entity.npc.villager.Villager villager,
 			ServerPlayer player, String optionId) {
 		if (countEmeralds(player) < PRICE) {
-			return Component.literal("Bats. You hang a box up and they do the rest, and what they leave is worth more "
-				+ "to a field than anything you can buy. " + PRICE + " emeralds for one of mine.");
+			return DialogueRegistry.Reply.of("That is not " + PRICE + " emeralds. The bats aren't going anywhere.")
+				.walkAway("*count your pockets*");
 		}
 
 		takeEmeralds(player);
@@ -53,8 +60,9 @@ public final class BatBoxDialogue {
 
 		// The rules are the point. A box in the wrong place is indistinguishable
 		// from a box that is simply slow, and that is how people give up on them.
-		return Component.literal("Open sky above it, room to hang underneath, and water within a stone's throw. "
-			+ "Get any of that wrong and it will sit there for a season doing nothing, and you will blame the bats.");
+		return DialogueRegistry.Reply.of("Open sky above it, room to hang underneath, and water within a stone's throw. "
+			+ "Get any of that wrong and it will sit there for a season doing nothing, and you will blame the bats.")
+			.walkAway("Sky, room, water. Got it.");
 	}
 
 	private static int countEmeralds(ServerPlayer player) {
