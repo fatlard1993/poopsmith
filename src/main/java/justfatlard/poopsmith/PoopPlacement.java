@@ -9,6 +9,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.tags.BlockTags;
@@ -228,7 +229,7 @@ public final class PoopPlacement {
 	}
 
 	/** The full block a layer stack of this kind packs down into and then rises on. */
-	private static Block compostBase(PoopLayerBlock layerBlock) {
+	public static Block compostBase(PoopLayerBlock layerBlock) {
 		return layerBlock == Main.POOP_LAYER_BLOCK ? Main.POOP_BLOCK : Main.GUANO_BLOCK;
 	}
 
@@ -576,6 +577,10 @@ public final class PoopPlacement {
 	 * (the break handler in Main).
 	 */
 	public static void fertilizeAround(ServerLevel world, BlockPos pos) {
+		// The ground this landed on, before anything further off: bare tilled ground takes a seed,
+		// which is the one thing bonemeal cannot do for it.
+		if (sow(world, pos.below())) return;
+
 		if (tryGrow(world, pos.below())) return;
 		for (Direction direction : Direction.Plane.HORIZONTAL) {
 			if (tryGrow(world, pos.relative(direction))) return;
@@ -584,6 +589,10 @@ public final class PoopPlacement {
 		// path, poop block, or other unbonemealable ground
 		for (Direction direction : Direction.Plane.HORIZONTAL) {
 			if (tryGrow(world, pos.relative(direction).below())) return;
+		}
+		// Tilled ground beside it, for muck that landed on the path between two rows.
+		for (Direction direction : Direction.Plane.HORIZONTAL) {
+			if (sow(world, pos.relative(direction).below())) return;
 		}
 		// Nothing bonemealable in range (streets, latrine pits, bare dirt):
 		// the charge escapes as a visible puff so the action never reads dead
@@ -613,6 +622,45 @@ public final class PoopPlacement {
 
 	private static boolean isCrop(BlockState state) {
 		return state.is(BlockTags.CROPS) || state.getBlock() instanceof CropBlock || state.getBlock() instanceof StemBlock;
+	}
+
+	/** How far muck carries a seed: the crops it could plausibly have come through. */
+	private static final int SEED_REACH = 3;
+
+	/**
+	 * Sow bare farmland with whatever grows around it.
+	 *
+	 * <p>Muck is not sterile. It has been through something that ate a field, and what comes up
+	 * out of a dung heap is whatever that field was growing - which is why a midden left alone
+	 * sprouts. Bonemeal does nothing at all to tilled ground with nothing in it, so this is the
+	 * one place the charge had nowhere to go and the pile just vanished.
+	 *
+	 * <p>The crop is drawn from the ones standing nearby, counted rather than listed, so a wheat
+	 * field mostly reseeds itself and a mixed garden comes up mixed. Nothing growing within reach
+	 * means nothing to carry, and the charge falls through to the puff: seed has to come from
+	 * somewhere.
+	 */
+	private static boolean sow(ServerLevel world, BlockPos ground) {
+		if (!world.getBlockState(ground).is(Blocks.FARMLAND)) return false;
+
+		// Air, not merely replaceable. A pile part way through rotting is itself replaceable, and
+		// planting into one would take the layers still standing with it.
+		BlockPos bed = ground.above();
+		if (!world.getBlockState(bed).isAir()) return false;
+
+		List<Block> nearby = new ArrayList<>();
+		for (BlockPos at : BlockPos.betweenClosed(
+				bed.offset(-SEED_REACH, -1, -SEED_REACH), bed.offset(SEED_REACH, 1, SEED_REACH))) {
+			if (world.getBlockState(at).getBlock() instanceof CropBlock crop) nearby.add(crop);
+		}
+		if (nearby.isEmpty()) return false;
+
+		BlockState sown = nearby.get(world.getRandom().nextInt(nearby.size())).defaultBlockState();
+		if (!sown.canSurvive(world, bed)) return false;
+
+		world.setBlockAndUpdate(bed, sown);
+		world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, bed, 0);
+		return true;
 	}
 
 	private static boolean tryGrow(ServerLevel world, BlockPos pos) {

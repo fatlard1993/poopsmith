@@ -253,9 +253,23 @@ public class PoopLayerBlock extends Block {
 		return this.rots && super.isRandomlyTicking(state);
 	}
 
+	/**
+	 * A heap standing on a block of the same stuff is a midden, and a midden keeps.
+	 *
+	 * <p>Nothing else in the mod lets poop stand still: it rots where it falls, which is the whole
+	 * nutrient cycle and the reason shovelling pays. But a block underneath is not ground that
+	 * happens to have muck on it - it is muck somebody packed, in a pit they dug or a corner they
+	 * fenced, and the layers riding on top of it are the same heap still being built. Rotting
+	 * those was the mod quietly undoing the one part of it that takes work.
+	 */
+	private boolean kept(ServerLevel world, BlockPos pos) {
+		return world.getBlockState(pos.below()).is(PoopPlacement.compostBase(this));
+	}
+
 	@Override
 	protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 		if (!this.rots) return;
+		if (kept(world, pos)) return;
 		if (random.nextInt(DECAY_CHANCE) != 0) return;
 
 		int layers = state.getValue(LAYERS);

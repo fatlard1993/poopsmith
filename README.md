@@ -44,6 +44,10 @@ An animal standing in a crop when it goes leaves no pile: the crop gets a boneme
 
 **A pile that keeps being added to keeps living.** Decay is per layer, so every fresh deposit buys the heap another layer's worth of time. Somewhere a herd stands all day gains faster than it rots and needs shovelling; ground the animals only cross now and then clears itself. Room is the other answer to muck, and the cheaper one.
 
+**A heap on a poop block does not rot at all.** A block underneath is not ground with muck on it, it is muck somebody packed - a pit they dug, a corner they fenced - and the layers riding on top are the same heap still being built. A midden keeps until it is shovelled. Guano never rotted in the first place.
+
+**Muck on bare tilled ground sows it.** Bonemeal does nothing to farmland with nothing in it, so a layer rotting there, a pile broken there, or a handful thrown there plants instead: one crop, drawn from the ones growing within three blocks, counted rather than listed, so a wheat field mostly reseeds itself and a mixed garden comes up mixed. Nothing growing in reach means nothing to carry and the charge goes off as a puff - seed has to come from somewhere, and muck has been through something that ate a field.
+
 ## Off A Ledge
 
 A poop dropped over an edge falls as far as there is world to fall through, with a descending
