@@ -7,6 +7,8 @@ import justfatlard.poopsmith.integration.VillageBuilderIntegration;
 import justfatlard.poopsmith.player.BedAccident;
 import justfatlard.poopsmith.player.PlayerPoopManager;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.commands.Commands;
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -305,6 +307,21 @@ public class Main implements ModInitializer {
 		// because InputConstants is client-only, absent on a dedicated server
 		PandoricalApi.keybinds().register(MOD_ID + ":poop", 10, "Poop",
 			PlayerPoopManager::tryManualPoop);
+
+		// The same thing the key does, for a client that has no keys of ours.
+		//
+		// Going voluntarily is a Pandorical keybind and the gauge is a Pandorical HUD, so a player
+		// on a plain client had no way to do either and met this mod only as accidents. The command
+		// is the way in that needs nothing installed.
+		CommandRegistrationCallback.EVENT.register((dispatcher, registry, environment) ->
+			dispatcher.register(Commands.literal("poop").executes(context -> {
+				PlayerPoopManager.tryManualPoop(context.getSource().getPlayerOrException());
+				return 1;
+			})));
+		PandoricalApi.commandHelp().describe("/poop",
+			"Go, if you need to. Says how you are getting on if you do not.");
+		PandoricalApi.actionMenus().suggestButton(justfatlard.pandorical.api.ActionMenuApi.Button
+			.runs(MOD_ID + ":poop", "Poop", "poop"));
 
 		ServerTickEvents.END_SERVER_TICK.register(PlayerPoopManager::onServerTick);
 		ServerTickEvents.END_SERVER_TICK.register(PoopFlies::onServerTick);

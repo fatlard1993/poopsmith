@@ -26,7 +26,7 @@
 		"fabric-api": "${fabricApiVersion}",
 		"minecraft": "${minecraftDependency}",
 		"java": ">=25",
-		"pandorical": "*"
+		"pandorical": ">=15.0.0"
 	},
 	"suggests": {
 		"village-builder": "*",
