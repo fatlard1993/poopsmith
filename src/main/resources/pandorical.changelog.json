@@ -4,16 +4,23 @@
 	],
 	"versions": {
 		"1.3.0": [
-			"/poop does what the keybind does, so a plain client can go when it needs to and hear how it is getting on rather than meeting this mod only as accidents. There is a button for it in the action menu as well."
+			"/poop does what the keybind does, so a plain client can go when it needs to.",
+			"There is a button for it in the action menu as well."
 		],
 		"1.2.0": [
-			"Muck landing on bare tilled ground now sows a crop, drawn from whatever is growing within a few blocks, rather than vanishing. And a heap sitting on a block of the same stuff stops rotting, so a midden keeps."
+			"Muck landing on bare tilled ground sows a crop, drawn from whatever is growing nearby.",
+			"A heap sitting on a block of the same stuff stops rotting, so a midden keeps."
 		],
 		"1.1.0": [
-			"A heap climbs the full eight layers where something holds it in, and the ninth deposit packs it into a block. A bed accident leaves a pile on the mattress, guano stops rotting so a roost builds a bed worth quarrying, and the bat box says which of sky, room or water is stopping it."
+			"A heap climbs the full eight layers where something holds it in; the ninth packs it into a block.",
+			"A bed accident leaves a pile on the mattress.",
+			"Guano stops rotting, so a roost builds a bed worth quarrying.",
+			"The bat box says which of sky, room or water is stopping it."
 		],
 		"1.0.0": [
-			"The whole cycle: piles that spread before they stack, a digestive tract on the HUD, village latrines and the quests that go with them, bat boxes and guano, throwable poop that fertilises where it lands, and dung-fired furnaces."
+			"The whole cycle: piles that spread before they stack, and a digestive tract on the HUD.",
+			"Village latrines and the quests that go with them.",
+			"Bat boxes and guano, throwable poop that fertilises where it lands, and dung-fired furnaces."
 		]
 	}
 }
