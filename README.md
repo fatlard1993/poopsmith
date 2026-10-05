@@ -4,8 +4,8 @@ A Minecraft Fabric mod. Everything that eats, poops.
 
 ## Screenshots
 
-![A village privy on its dirt street, a villager at the door, and the piles of those who did not make it](latrine.png)
 ![A paddock that has been lived in: a mat of piles spreading across it, and the herd that left them](paddock.png)
+![A village privy on its dirt street, a villager at the door, and the piles of those who did not make it](latrine.png)
 ![A roost paying its way: a bat box on the wall and the bed of guano built up under it](roost.png)
 
 ## What This Mod Does
