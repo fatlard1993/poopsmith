@@ -3,6 +3,9 @@
 		"Everything that eats, poops. Animals, players, villagers and bats leave piles, the piles rot down into fertiliser, and the shovelling is worth something."
 	],
 	"versions": {
+		"1.3.1": [
+			"The gut bar climbs above the air bubbles while they show, instead of drawing over them."
+		],
 		"1.3.0": [
 			"/poop does what the keybind does, so a plain client can go when it needs to.",
 			"There is a button for it in the action menu as well."

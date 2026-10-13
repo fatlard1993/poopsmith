@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>On a client that cannot suppress vanilla elements (older Pandorical build) the
  * drumsticks keep the hunger row, so the same tract is drawn one row higher instead,
- * where it can overlap air bubbles while swimming. Food level then reads twice, once
+ * and climbs over the air bubbles while they show. Food level then reads twice, once
  * as drumsticks and once as amber, which is redundant but not broken.
  *
  * <p>Callers must only invoke on change (never per-tick beyond the cheap reconcile in
@@ -57,6 +57,7 @@ public final class DigestiveHud {
 	private static final int WASTE_SPAN = 63;     // tube start to the pucker hole
 	private static final int LEFT_EDGE_FROM_CENTER = 10;
 	private static final int BOTTOM_MARGIN = 30;  // puts the row where the drumsticks were
+	private static final int ABOVE_BUBBLES = 50;  // vanilla's bubbles sit at height-49..height-41
 
 	// The flush icon emerges from the sphincter (canvas x 77.5). It is momentary,
 	// so it is allowed to overhang the tract's right edge; nothing persistent does.
@@ -81,8 +82,8 @@ public final class DigestiveHud {
 	/** Last food level pushed, so the per-tick reconcile only sends on change. */
 	private static final Map<UUID, Integer> lastFood = new ConcurrentHashMap<>();
 
-	/** Whether the tract was last drawn a row up for a mount. */
-	private static final Map<UUID, Boolean> ridingLast = new ConcurrentHashMap<>();
+	/** The row the tract was last built on. */
+	private static final Map<UUID, Integer> rowLast = new ConcurrentHashMap<>();
 
 	/** Push the tract (first time) or its new fill widths to a capable player. */
 	public static void showOrUpdate(ServerPlayer player, int level) {
@@ -99,9 +100,6 @@ public final class DigestiveHud {
 
 			HudBuilder hud = new HudBuilder(OVERLAY_ID)
 				.anchor("bottom_center")
-				// Without suppression the drumsticks still own the hunger row, so the
-				// tract moves one row up into the air-bubble band: it overlaps bubbles
-				// while swimming, which is the lesser of the two collisions.
 				.offset(LEFT_EDGE_FROM_CENTER, rowFor(player, canReplaceFoodBar))
 				.component(new ComponentBuilder(TRACT_ID, ComponentType.SPRITE)
 					.bounds(0, 0, TRACT_WIDTH, TRACT_HEIGHT)
@@ -130,6 +128,7 @@ public final class DigestiveHud {
 					.bounds(ICON_X, 0, 0, 0)
 					.prop(ComponentType.PROP_TEXTURE, TEXTURE_POOP_ITEM));
 			PandoricalApi.hud().show(player, hud.build());
+			rowLast.put(player.getUUID(), rowFor(player, canReplaceFoodBar));
 
 			if (canReplaceFoodBar) {
 				replacingFoodBar.add(player.getUUID());
@@ -214,15 +213,12 @@ public final class DigestiveHud {
 			return;
 		}
 		// The row is chosen when the overlay is built and cannot be nudged afterwards, so getting
-		// on or off a horse means building it again.
-		boolean ridingNow = riding(player);
-		if (!Boolean.valueOf(ridingNow).equals(ridingLast.get(uuid))) {
-			ridingLast.put(uuid, ridingNow);
-			if (shownNow) {
-				hide(player);
-				showOrUpdate(player, level);
-				return;
-			}
+		// on or off a horse, or the bubbles coming and going, means building it again.
+		Integer row = rowLast.get(uuid);
+		if (row != null && row != rowFor(player, PandoricalApi.hasCapability(player, "hud_elements"))) {
+			hide(player);
+			showOrUpdate(player, level);
+			return;
 		}
 
 		int food = player.getFoodData().getFoodLevel();
@@ -252,12 +248,21 @@ public final class DigestiveHud {
 	 * because the row above is occupied in exactly the same way.
 	 *
 	 * <p>A boat or a minecart is not alive and has no hearts to draw, so those are left alone.
+	 *
+	 * <p>Pushed up at all, the tract is in the air bubbles' row, so while they show it goes on up
+	 * above them.
 	 */
 	private static int rowFor(ServerPlayer player, boolean canReplaceFoodBar) {
 		int row = BOTTOM_MARGIN;
 		if (!canReplaceFoodBar) row += TRACT_HEIGHT;
 		if (riding(player)) row += TRACT_HEIGHT;
+		if (row > BOTTOM_MARGIN && bubblesShowing(player)) row = Math.max(row, ABOVE_BUBBLES);
 		return row;
+	}
+
+	/** When vanilla draws the air bubbles: head under water, or breath not yet back. */
+	private static boolean bubblesShowing(ServerPlayer player) {
+		return player.isEyeInFluid(net.minecraft.tags.FluidTags.WATER) || player.getAirSupply() < player.getMaxAirSupply();
 	}
 
 	/** Riding something that draws its own health where the hunger bar goes. */
@@ -283,6 +288,6 @@ public final class DigestiveHud {
 		shown.remove(uuid);
 		replacingFoodBar.remove(uuid);
 		lastFood.remove(uuid);
-		ridingLast.remove(uuid);
+		rowLast.remove(uuid);
 	}
 }
