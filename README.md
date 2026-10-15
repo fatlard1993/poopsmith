@@ -92,9 +92,7 @@ Bats finally earn their keep. Every bat drops guano roughly once per day on its 
 
 ## Pandorical
 
-Poopsmith runs server-side, and Pandorical is a hard dependency: it carries every client-facing piece. Block, item and asset sync (the textures ship in this jar; Pandorical's virtual resource pack delivers them), the thrown-poop renderer, the digestive HUD including its takeover of vanilla's hunger bar, the poopsmith's gloves overlay, and the poop keybind, which is a pooled Pandorical keybind so no poopsmith jar ever reaches a client.
-
-Clients are the optional half. A player on a Pandorical client gets the bar and the keybind; a player on a vanilla client participates fully server-side but cannot see the bar or go voluntarily. Accidents happen.
+Poopsmith goes on the server only, and **Pandorical is required there and on every player's client**: the piles, blocks and items are new to the game, and a client without Pandorical has no entry for them. Pandorical also draws the digestive bar and carries the poop key, so no Poopsmith jar is needed on a client.
 
 ## Development
 
