@@ -1,0 +1,128 @@
+{
+  "demo": {
+    "name": "Poopsmith",
+    "icon": "poopsmith:poop",
+    "about": [
+      "Everything that eats, poops: animals leave piles, you carry a digestive tract in place of the hunger bar, and the muck rots down into fertiliser.",
+      "Eat some raw beef to fill up, then press G to go, sneaking to aim it behind you into a crop. Shovel piles with the Pooper Scooper, throw poop onto the field to grow it, and fence in the cows to watch them make more."
+    ]
+  },
+  "pvp_preset": 1,
+  "needs": [
+    "poopsmith"
+  ],
+  "preset": {
+    "name": "Poopsmith",
+    "icon": "poopsmith:poop",
+    "pvp": false,
+    "game_mode": "survival",
+    "entry_kit": [
+      {
+        "slot": 0,
+        "item": {
+          "id": "minecraft:iron_shovel",
+          "count": 1,
+          "components": {
+            "minecraft:enchantments": {
+              "poopsmith:pooper_scooper": 3
+            }
+          }
+        }
+      },
+      {
+        "slot": 1,
+        "item": {
+          "id": "poopsmith:poop",
+          "count": 16
+        }
+      },
+      {
+        "slot": 2,
+        "item": {
+          "id": "minecraft:beef",
+          "count": 8
+        }
+      },
+      {
+        "slot": 3,
+        "item": {
+          "id": "minecraft:iron_hoe",
+          "count": 1
+        }
+      },
+      {
+        "slot": 4,
+        "item": {
+          "id": "minecraft:wheat_seeds",
+          "count": 32
+        }
+      },
+      {
+        "slot": 5,
+        "item": {
+          "id": "minecraft:water_bucket",
+          "count": 1
+        }
+      },
+      {
+        "slot": 7,
+        "item": {
+          "id": "minecraft:oak_fence",
+          "count": 32
+        }
+      },
+      {
+        "slot": 8,
+        "item": {
+          "id": "minecraft:bread",
+          "count": 8
+        }
+      },
+      {
+        "slot": 9,
+        "item": {
+          "id": "poopsmith:poop_block",
+          "count": 4
+        }
+      },
+      {
+        "slot": 10,
+        "item": {
+          "id": "minecraft:wheat",
+          "count": 16
+        }
+      },
+      {
+        "slot": 11,
+        "item": {
+          "id": "minecraft:oak_fence_gate",
+          "count": 2
+        }
+      },
+      {
+        "slot": 12,
+        "item": {
+          "id": "minecraft:composter",
+          "count": 1
+        }
+      }
+    ],
+    "respawn_kit": "entry",
+    "goal": "time",
+    "mobs": "always",
+    "life": 15,
+    "size": 3,
+    "world": "overworld",
+    "shape": "natural",
+    "biome": "minecraft:plains",
+    "weather": "clear",
+    "mob_rarity": "normal",
+    "mob_default": "off",
+    "mob_levels": {
+      "minecraft:cow": "common",
+      "minecraft:sheep": "normal",
+      "minecraft:pig": "normal",
+      "minecraft:llama": "rare"
+    }
+  }
+}
