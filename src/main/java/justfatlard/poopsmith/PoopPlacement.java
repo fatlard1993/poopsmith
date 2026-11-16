@@ -14,11 +14,15 @@ import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * Shared poop-deposit logic for animals, llamas, and players.
@@ -439,15 +443,13 @@ public final class PoopPlacement {
 	public static Optional<BlockPos> findNearestPoop(ServerLevel world, BlockPos center) {
 		BlockPos best = null;
 		double bestDistSq = Double.MAX_VALUE;
-		for (BlockPos pos : BlockPos.betweenClosed(
-				center.offset(-LLAMA_SEARCH_RADIUS, -LLAMA_SEARCH_HEIGHT, -LLAMA_SEARCH_RADIUS),
-				center.offset(LLAMA_SEARCH_RADIUS, LLAMA_SEARCH_HEIGHT, LLAMA_SEARCH_RADIUS))) {
-			if (!world.getBlockState(pos).is(Main.POOP_LAYER_BLOCK)) continue;
+		for (BlockPos pos : scan(world, center, LLAMA_SEARCH_RADIUS, LLAMA_SEARCH_HEIGHT,
+				state -> state.is(Main.POOP_LAYER_BLOCK))) {
 			if (world.getBlockState(pos.below()).is(Main.POOP_BLOCK)) continue;
 			double distSq = pos.distSqr(center);
 			if (distSq < bestDistSq) {
 				bestDistSq = distSq;
-				best = pos.immutable();
+				best = pos;
 			}
 		}
 		return Optional.ofNullable(best);
@@ -484,14 +486,12 @@ public final class PoopPlacement {
 	public static Optional<BlockPos> findLatrineTarget(ServerLevel world, BlockPos center) {
 		BlockPos best = null;
 		double bestDistSq = Double.MAX_VALUE;
-		for (BlockPos pos : BlockPos.betweenClosed(
-				center.offset(-LATRINE_SEARCH_RADIUS, -LATRINE_SEARCH_HEIGHT, -LATRINE_SEARCH_RADIUS),
-				center.offset(LATRINE_SEARCH_RADIUS, LATRINE_SEARCH_HEIGHT, LATRINE_SEARCH_RADIUS))) {
-			if (!world.getBlockState(pos).is(Main.POOP_BLOCK)) continue;
+		for (BlockPos pos : scan(world, center, LATRINE_SEARCH_RADIUS, LATRINE_SEARCH_HEIGHT,
+				state -> state.is(Main.POOP_BLOCK))) {
 			// Walk each column from its bottom block only, so a stack of
 			// converted blocks is scanned once
 			if (world.getBlockState(pos.below()).is(Main.POOP_BLOCK)) continue;
-			BlockPos target = depositableAbove(world, pos.immutable());
+			BlockPos target = depositableAbove(world, pos);
 			if (target == null) continue;
 			double distSq = target.distSqr(center);
 			if (distSq < bestDistSq) {
@@ -509,12 +509,10 @@ public final class PoopPlacement {
 	 */
 	public static java.util.List<BlockPos> findLatrinePits(ServerLevel world, BlockPos center) {
 		java.util.List<BlockPos> pits = new java.util.ArrayList<>();
-		for (BlockPos pos : BlockPos.betweenClosed(
-				center.offset(-LATRINE_SEARCH_RADIUS, -LATRINE_SEARCH_HEIGHT, -LATRINE_SEARCH_RADIUS),
-				center.offset(LATRINE_SEARCH_RADIUS, LATRINE_SEARCH_HEIGHT, LATRINE_SEARCH_RADIUS))) {
-			if (!world.getBlockState(pos).is(Main.POOP_BLOCK)) continue;
+		for (BlockPos pos : scan(world, center, LATRINE_SEARCH_RADIUS, LATRINE_SEARCH_HEIGHT,
+				state -> state.is(Main.POOP_BLOCK))) {
 			if (world.getBlockState(pos.below()).is(Main.POOP_BLOCK)) continue;
-			pits.add(pos.immutable());
+			pits.add(pos);
 		}
 		return pits;
 	}
@@ -527,14 +525,72 @@ public final class PoopPlacement {
 	 */
 	public static int countOpenAirStacks(ServerLevel world, BlockPos center) {
 		int count = 0;
-		for (BlockPos pos : BlockPos.betweenClosed(
-				center.offset(-LATRINE_SEARCH_RADIUS, -LATRINE_SEARCH_HEIGHT, -LATRINE_SEARCH_RADIUS),
-				center.offset(LATRINE_SEARCH_RADIUS, LATRINE_SEARCH_HEIGHT, LATRINE_SEARCH_RADIUS))) {
-			BlockState state = world.getBlockState(pos);
-			if (!state.is(Main.POOP_LAYER_BLOCK) && !state.is(Main.GUANO_LAYER_BLOCK)) continue;
+		for (BlockPos pos : scan(world, center, LATRINE_SEARCH_RADIUS, LATRINE_SEARCH_HEIGHT,
+				state -> state.is(Main.POOP_LAYER_BLOCK) || state.is(Main.GUANO_LAYER_BLOCK))) {
 			if (world.canSeeSky(pos.above())) count++;
 		}
 		return count;
+	}
+
+	/**
+	 * Every block {@code wanted} accepts within {@code radius} across and {@code height} up and
+	 * down of {@code center}, in {@link BlockPos#betweenClosed} order so the nearest-wins searches
+	 * above keep their tie-break. Only chunks already loaded are read: a search is no reason to
+	 * load one. A section whose palette cannot hold a wanted block is passed over unread.
+	 */
+	private static List<BlockPos> scan(ServerLevel world, BlockPos center, int radius, int height,
+			Predicate<BlockState> wanted) {
+		int minX = center.getX() - radius, maxX = center.getX() + radius;
+		int minZ = center.getZ() - radius, maxZ = center.getZ() + radius;
+		int minY = Math.max(center.getY() - height, world.getMinY());
+		int maxY = Math.min(center.getY() + height, world.getMaxY());
+		List<BlockPos> found = new ArrayList<>();
+		if (minY > maxY) return found;
+
+		for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
+			for (int cx = minX >> 4; cx <= maxX >> 4; cx++) {
+				LevelChunk chunk = world.getChunkSource().getChunkNow(cx, cz);
+				if (chunk == null) continue;
+				for (int sy = minY >> 4; sy <= maxY >> 4; sy++) {
+					LevelChunkSection section = chunk.getSection(chunk.getSectionIndexFromSectionY(sy));
+					if (section.hasOnlyAir() || !section.maybeHas(wanted)) continue;
+					int x0 = Math.max(minX, cx << 4), x1 = Math.min(maxX, (cx << 4) + 15);
+					int y0 = Math.max(minY, sy << 4), y1 = Math.min(maxY, (sy << 4) + 15);
+					int z0 = Math.max(minZ, cz << 4), z1 = Math.min(maxZ, (cz << 4) + 15);
+					for (int z = z0; z <= z1; z++) {
+						for (int y = y0; y <= y1; y++) {
+							for (int x = x0; x <= x1; x++) {
+								if (wanted.test(section.getBlockState(x & 15, y & 15, z & 15))) {
+									found.add(new BlockPos(x, y, z));
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		found.sort(SCAN_ORDER);
+		return found;
+	}
+
+	private static final Comparator<BlockPos> SCAN_ORDER = Comparator.<BlockPos>comparingInt(pos -> pos.getZ())
+		.thenComparingInt(pos -> pos.getY()).thenComparingInt(pos -> pos.getX());
+
+	/** Whether any loaded section touching the box could hold a block {@code wanted} accepts. */
+	public static boolean mayHoldNear(ServerLevel world, BlockPos center, int radius, Predicate<BlockState> wanted) {
+		int minY = Math.max(center.getY() - radius, world.getMinY());
+		int maxY = Math.min(center.getY() + radius, world.getMaxY());
+		for (int cz = (center.getZ() - radius) >> 4; cz <= (center.getZ() + radius) >> 4; cz++) {
+			for (int cx = (center.getX() - radius) >> 4; cx <= (center.getX() + radius) >> 4; cx++) {
+				LevelChunk chunk = world.getChunkSource().getChunkNow(cx, cz);
+				if (chunk == null) continue;
+				for (int sy = minY >> 4; sy <= maxY >> 4; sy++) {
+					LevelChunkSection section = chunk.getSection(chunk.getSectionIndexFromSectionY(sy));
+					if (!section.hasOnlyAir() && section.maybeHas(wanted)) return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/** Converted poop blocks stacked above a pit's seed block: how full it is. */
