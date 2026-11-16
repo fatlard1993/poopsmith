@@ -122,8 +122,12 @@ public final class PoopFlies {
 	}
 
 	private static void recruit(ServerLevel world, ServerPlayer player, List<Fly> swarm) {
-		RandomSource random = world.getRandom();
+		if (swarm.size() >= MAX_FLIES_PER_PLAYER) return;
 		BlockPos origin = player.blockPosition();
+		// Most of the world has no pile near anyone, and the palettes say so
+		// without a single sample being drawn
+		if (!PoopPlacement.mayHoldNear(world, origin, RADIUS, state -> state.is(Main.POOP_LAYER_BLOCK))) return;
+		RandomSource random = world.getRandom();
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		int recruited = 0;
 
