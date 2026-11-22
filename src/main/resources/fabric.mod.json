@@ -3,7 +3,7 @@
 	"id": "poopsmith",
 	"version": "${version}",
 	"name": "Poopsmith",
-	"description": "Animals poop, players poop, bats poop guano, and it all composts down: poop and guano layers that decay into bonemeal, throwable poop, bat boxes, dung-fired furnaces, and a server-tracked poop bar (server-side with Pandorical)",
+	"description": "Animals and players poop, and it all composts down into fertile ground",
 	"authors": [
 		"justfatlard"
 	],
